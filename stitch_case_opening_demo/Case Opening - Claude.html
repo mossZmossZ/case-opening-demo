@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zenith Comp — Lucky Draw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+#root { width: 100%; height: 100%; }
+
+:root {
+  --nav:       #050D1A;
+  --secondary: #0E1F38;
+  --bg:        #070E1C;
+  --surface:   rgba(255,255,255,0.04);
+  --surface2:  rgba(255,255,255,0.07);
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.14);
+  --text:      #F0F4FF;
+  --text2:     #8A9ABB;
+  --text3:     #4A5A7A;
+  --orange:    #E8611A;
+  --orange2:   #FF7B3A;
+  --orange-dim: rgba(232,97,26,0.18);
+  --gold:      #F5C842;
+  --purple:    #8B5CF6;
+  --blue:      #3B82F6;
+  --green:     #22C55E;
+  --gray:      #4A5568;
+  --c-common:    #5A6A8A;
+  --c-rare:      #3B82F6;
+  --c-epic:      #8B5CF6;
+  --c-legendary: #F5C842;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 12px;
+}
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(232,97,26,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(59,130,246,0.06) 0%, transparent 60%);
+  font-family: var(--font);
+}
+
+/* Screens */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  animation: scr-in 280ms cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes scr-in {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Grid noise overlay */
+.screen::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Typography */
+.label { font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text2); }
+
+/* Buttons */
+.btn {
+  font-family: var(--font); font-size:1rem; font-weight:700;
+  letter-spacing:0.04em; height:54px; border:none; border-radius:var(--r);
+  cursor:pointer; transition:all 180ms ease; position:relative; overflow:hidden;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange2) 100%);
+  color:#000; width:100%;
+  box-shadow: 0 0 0 0 rgba(232,97,26,0);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 32px rgba(232,97,26,0.35), 0 4px 16px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) { transform:translateY(0); }
+.btn-primary:disabled { background:var(--surface2); color:var(--text3); cursor:not-allowed; box-shadow:none; }
+.btn-ghost {
+  background: var(--surface); color:var(--text2); border:1px solid var(--border2);
+  padding:0 20px;
+}
+.btn-ghost:hover { color:var(--orange); border-color:var(--orange); background:var(--orange-dim); }
+
+/* Card */
+.card {
+  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+  border:1px solid var(--border2); border-radius:16px;
+  backdrop-filter: blur(12px);
+}
+
+/* Input */
+input[type=text], input[type=password] {
+  width:100%; height:54px; padding:0 18px;
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--r); color:var(--text); font-family:var(--font);
+  font-size:1rem; outline:none;
+  transition:border-color 180ms, box-shadow 180ms;
+}
+input:focus {
+  border-color:rgba(232,97,26,0.5);
+  box-shadow:0 0 0 3px rgba(232,97,26,0.1);
+}
+input.err { border-color:rgba(239,68,68,0.7); animation: shake 300ms ease; }
+input::placeholder { color:var(--text3); }
+@keyframes shake {
+  0%,100% { transform:translateX(0); }
+  25%      { transform:translateX(-6px); }
+  75%      { transform:translateX(6px); }
+}
+
+/* Spinner */
+.spin { width:18px;height:18px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:ro 600ms linear infinite;display:inline-block; }
+@keyframes ro { to { transform:rotate(360deg); } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* Reel */
+.reel-wrap {
+  position:relative; overflow:hidden;
+  border-radius:16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  border:1px solid var(--border2);
+  height:168px;
+}
+.reel-track { display:flex; gap:10px; will-change:transform; }
+.reel-card {
+  flex-shrink:0; width:108px; height:148px;
+  border-radius:10px; border:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; position:relative; overflow:hidden;
+  background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  transition:border-color 200ms;
+}
+.reel-card::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 50%);
+  pointer-events:none;
+}
+.reel-card.common   { border-color:rgba(90,106,138,0.3); }
+.reel-card.rare     { border-color:rgba(59,130,246,0.3); }
+.reel-card.epic     { border-color:rgba(139,92,246,0.3); }
+.reel-card.legendary{ border-color:rgba(245,200,66,0.4); }
+.reel-card.legendary .rc-icon { filter:drop-shadow(0 0 8px rgba(245,200,66,0.6)); }
+
+/* Particles canvas */
+#particles { position:fixed; inset:0; pointer-events:none; z-index:50; }
+
+/* Topbar gradient */
+.topbar {
+  position:absolute; top:0; left:0; right:0; height:64px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 32px;
+  border-bottom:1px solid var(--border);
+  z-index:10;
+}
+.topbar::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(45deg, var(--nav) 0%, var(--secondary) 55%);
+  z-index:-1;
+}
+
+/* Result animations */
+@keyframes result-pop {
+  0%   { opacity:0; transform:scale(0.88) translateY(20px); }
+  70%  { transform:scale(1.02) translateY(-2px); }
+  100% { opacity:1; transform:scale(1) translateY(0); }
+}
+@keyframes tier-shine {
+  0%,100% { opacity:0.4; }
+  50%      { opacity:1; }
+}
+@keyframes float {
+  0%,100% { transform:translateY(0px); }
+  50%      { transform:translateY(-8px); }
+}
+@keyframes pulse-ring {
+  0%   { transform:scale(0.8); opacity:0.6; }
+  100% { transform:scale(2.2); opacity:0; }
+}
+
+/* Scan line on reel while spinning */
+@keyframes scan {
+  0%   { top:0; }
+  100% { top:100%; }
+}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ── Particles ─────────────────────────────────────────────────────────────── */
+function burst(x, y, color, count = 32) {
+  const canvas = document.getElementById('particles');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const particles = Array.from({length: count}, () => ({
+    x, y,
+    vx: (Math.random() - 0.5) * 14,
+    vy: (Math.random() - 0.5) * 14 - 4,
+    r: Math.random() * 4 + 2,
+    alpha: 1,
+    color,
+  }));
+  let frame;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.3; p.alpha -= 0.022;
+      if (p.alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    if (particles.some(p => p.alpha > 0)) frame = requestAnimationFrame(animate);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  cancelAnimationFrame(frame);
+  animate();
+}
+
+/* ── Data ──────────────────────────────────────────────────────────────────── */
+const TIER_META = {
+  common:    { label:'Common',    color:'#5A6A8A', glow:'rgba(90,106,138,0.3)' },
+  rare:      { label:'Rare',      color:'#3B82F6', glow:'rgba(59,130,246,0.35)' },
+  epic:      { label:'Epic',      color:'#8B5CF6', glow:'rgba(139,92,246,0.4)' },
+  legendary: { label:'Legendary', color:'#F5C842', glow:'rgba(245,200,66,0.45)' },
+};
+const TIER_ORDER = ['common','rare','epic','legendary'];
+
+const PRIZES = [
+  { id:'consolation', tier:'common',    name:'Better Luck!',  sub:'Keep trying',          weight:55 },
+  { id:'sticker',     tier:'common',    name:'Sticker Set',   sub:'Exclusive designs',     weight:18 },
+  { id:'tshirt',      tier:'rare',      name:'T-Shirt',       sub:'Premium cotton',        weight:12 },
+  { id:'powerbank',   tier:'rare',      name:'Power Bank',    sub:'20,000 mAh',            weight:7  },
+  { id:'hoodie',      tier:'epic',      name:'Hoodie',        sub:'Limited edition',       weight:5  },
+  { id:'backpack',    tier:'epic',      name:'Backpack',      sub:'Tech carry',            weight:2  },
+  { id:'swagbox',     tier:'legendary', name:'Swag Box',      sub:'Ultimate bundle',       weight:0.8},
+  { id:'vip',         tier:'legendary', name:'VIP Upgrade',   sub:'All-access pass',       weight:0.2},
+];
+
+/* SVG prize icons */
+const PRIZE_ICONS = {
+  consolation: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="20" stroke="${c}" stroke-width="2" opacity="0.5"/>
+    <path d="M22 32l6 6 14-14" stroke="${c}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  sticker: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 10l5 10 11 1.6-8 7.8 1.9 11L32 35l-9.9 5.4 1.9-11-8-7.8L27 20z" fill="${c}" opacity="0.85"/>
+    <circle cx="32" cy="48" r="5" fill="${c}" opacity="0.5"/>
+  </svg>`,
+  tshirt: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 18l10-6s1 5 8 5 8-5 8-5l10 6-6 8h-5v20H23V26h-5z" fill="${c}" opacity="0.85"/>
+    <path d="M14 18l10-6M50 18l-10-6" stroke="${c}" stroke-width="1.5"/>
+  </svg>`,
+  powerbank: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="20" width="36" height="24" rx="4" stroke="${c}" stroke-width="2" fill="${c}" fill-opacity="0.15"/>
+    <rect x="50" y="27" width="4" height="10" rx="2" fill="${c}" opacity="0.6"/>
+    <path d="M30 32l-4 6h8l-4 6" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  hoodie: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 14c0 0-8 4-8 12v18h10V28h4v16h8V28h4v16h10V26c0-8-8-12-8-12s-2 8-10 8-10-8-10-8z" fill="${c}" opacity="0.85"/>
+    <path d="M24 14s2 8 8 8 8-8 8-8" stroke="${c}" stroke-width="1.5" fill="none"/>
+  </svg>`,
+  backpack: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="16" y="20" width="32" height="32" rx="6" fill="${c}" opacity="0.85"/>
+    <path d="M24 20v-4a8 8 0 0116 0v4" stroke="${c}" stroke-width="2" fill="none"/>
+    <rect x="22" y="28" width="20" height="8" rx="3" fill="${c}" fill-opacity="0.3" stroke="${c}" stroke-width="1.5"/>
+    <line x1="32" y1="36" x2="32" y2="52" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
+  </svg>`,
+  swagbox: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 10L54 22v20L32 54 10 42V22z" fill="${c}" fill-opacity="0.2" stroke="${c}" stroke-width="1.5"/>
+    <path d="M10 22l22 12 22-12M32 34v20" stroke="${c}" stroke-width="1.5"/>
+    <circle cx="32" cy="22" r="5" fill="${c}" opacity="0.9"/>
+  </svg>`,
+  vip: (c) => `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 8l6 12 14 2-10 10 2 14-12-6-12 6 2-14L12 22l14-2z" fill="${c}" opacity="0.9"/>
+    <circle cx="32" cy="32" r="22" stroke="${c}" stroke-width="1" opacity="0.3" stroke-dasharray="4 3"/>
+  </svg>`,
+};
+
+function PrizeIcon({ prizeId, tier, size = 52 }) {
+  const c = TIER_META[tier].color;
+  const svg = PRIZE_ICONS[prizeId]?.(c) || PRIZE_ICONS.consolation(c);
+  return <div dangerouslySetInnerHTML={{__html: svg}} style={{ width:size, height:size }} />;
+}
+
+function weightedRandom() {
+  const total = PRIZES.reduce((s,p) => s + p.weight, 0);
+  let r = Math.random() * total;
+  for (const p of PRIZES) { r -= p.weight; if (r <= 0) return p; }
+  return PRIZES[0];
+}
+
+const NAMES = ['Alex Chen','Sam Rivera','Jordan Lee','Morgan Kim','Casey Park','Taylor Nguyen','Riley Wu','Drew Patel','Kai Tanaka','Priya Sharma'];
+const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
+
+const ADMIN_CREDS = { user:'admin', pass:'zenith' };
+
+/* ── Reel ──────────────────────────────────────────────────────────────────── */
+const CARD_W = 108, CARD_GAP = 10, CARD_STEP = CARD_W + CARD_GAP;
+const REEL_LEN = 64;
+
+function buildReel(win) {
+  const items = Array.from({length: REEL_LEN}, () => weightedRandom());
+  const winIdx = REEL_LEN - 10;
+  items[winIdx] = win;
+  return { items, winIdx };
+}
+
+function ReelCardView({ prize, highlighted }) {
+  const c = TIER_META[prize.tier].color;
+  return (
+    <div className={`reel-card ${prize.tier}`} style={{
+      borderColor: highlighted ? c : undefined,
+      boxShadow: highlighted ? `0 0 20px ${TIER_META[prize.tier].glow}, inset 0 0 20px ${TIER_META[prize.tier].glow}` : undefined,
+    }}>
+      <PrizeIcon prizeId={prize.id} tier={prize.tier} size={44} />
+      <span style={{ fontFamily:'var(--mono)', fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color: c, opacity:0.9 }}>
+        {prize.label || TIER_META[prize.tier].label}
+      </span>
+    </div>
+  );
+}
+
+/* ── Welcome ───────────────────────────────────────────────────────────────── */
+function WelcomeScreen({ onStart }) {
+  const [name, setName] = useState('');
+  const [tries, setTries] = useState(3);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef();
+  useEffect(() => { ref.current?.focus(); }, []);
+
+  const go = () => {
+    if (!name.trim()) { ref.current?.focus(); return; }
+    setLoading(true);
+    setTimeout(() => onStart(name.trim(), tries), 400);
+  };
+
+  return (
+    <div className="screen" data-screen-label="Welcome">
+      <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:540, padding:'0 28px' }}>
+
+        {/* Brand */}
+        <div style={{ textAlign:'center', marginBottom:48 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:10, marginBottom:20 }}>
+            <div style={{
+              width:36, height:36, borderRadius:8,
+              background:'linear-gradient(135deg, var(--orange) 0%, var(--orange2) 100%)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              boxShadow:'0 0 20px rgba(232,97,26,0.4)',
+            }}>
+              <span style={{ fontSize:'1rem', fontWeight:900, color:'#000', fontFamily:'var(--font)', letterSpacing:'-0.05em' }}>Z</span>
+            </div>
+            <div>
+              <div style={{ fontSize:'0.85rem', fontWeight:700, color:'var(--text)', letterSpacing:'0.02em' }}>Zenith Comp Co., Ltd.</div>
+              <div style={{ fontSize:'0.65rem', fontWeight:500, color:'var(--text2)', letterSpacing:'0.12em', textTransform:'uppercase' }}>Lucky Draw</div>
+            </div>
+          </div>
+
+          <h1 style={{
+            fontSize:'clamp(2.8rem,6vw,5.5rem)', fontWeight:900, lineHeight:1.0,
+            letterSpacing:'-0.04em', color:'var(--text)',
+            textShadow:'0 0 60px rgba(232,97,26,0.2)',
+          }}>
+            OPEN YOUR<br />
+            <span style={{
+              background:'linear-gradient(90deg, var(--orange) 0%, var(--orange2) 50%, var(--gold) 100%)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+            }}>CASE</span>
+          </h1>
+          <p style={{ marginTop:16, fontSize:'0.9rem', color:'var(--text2)', lineHeight:1.6 }}>
+            Enter your name and spin the reel to discover your reward.
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="card" style={{ padding:'28px 28px 24px' }}>
+          <div style={{ display:'flex', gap:10, marginBottom:20 }}>
+            <input ref={ref} type="text" placeholder="Your full name" value={name}
+              onChange={e => setName(e.target.value)} onKeyDown={e => e.key==='Enter' && go()} maxLength={40} />
+            <button className="btn btn-ghost" onClick={() => setName(randomName())} style={{ height:54, flexShrink:0, fontSize:'0.85rem', fontWeight:600, padding:'0 16px', borderRadius:12 }}>
+              Random
+            </button>
+          </div>
+
+          <div style={{ marginBottom:24 }}>
+            <p className="label" style={{ marginBottom:12 }}>Number of attempts</p>
+            <div style={{ display:'flex', gap:8 }}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setTries(n)} style={{
+                  flex:1, height:48, border:`1px solid ${tries===n ? 'var(--orange)' : 'var(--border)'}`,
+                  borderRadius:8, background: tries===n ? 'var(--orange-dim)' : 'var(--surface)',
+                  color: tries===n ? 'var(--orange)' : 'var(--text2)',
+                  fontFamily:'var(--mono)', fontSize:'1.1rem', fontWeight:700, cursor:'pointer',
+                  transition:'all 150ms',
+                  boxShadow: tries===n ? '0 0 12px rgba(232,97,26,0.2)' : 'none',
+                }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn btn-primary" onClick={go} disabled={!name.trim() || loading} style={{ borderRadius:12, fontSize:'1rem', fontWeight:800, letterSpacing:'0.08em' }}>
+            {loading ? <span className="spin" /> : 'BEGIN'}
+          </button>
+        </div>
+
+        {/* Prize preview strip */}
+        <div style={{ marginTop:24, display:'flex', gap:8, justifyContent:'center', alignItems:'center' }}>
+          {PRIZES.filter(p => p.id !== 'consolation').map(p => (
+            <div key={p.id} style={{ display:'flex', alignItems:'center', gap:5 }} title={p.name}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background: TIER_META[p.tier].color, flexShrink:0 }} />
+            </div>
+          ))}
+          <span style={{ fontSize:'0.7rem', color:'var(--text3)', marginLeft:4 }}>7 prizes available</span>
+        </div>
+
+        {/* Admin */}
+        <p style={{ textAlign:'center', marginTop:28, fontSize:'0.7rem', color:'var(--text3)', cursor:'pointer', letterSpacing:'0.06em' }}
+           onClick={() => onStart(null, null, true)}>
+          ADMIN →
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Game ──────────────────────────────────────────────────────────────────── */
+function GameScreen({ playerName, attemptsLeft, totalAttempts, onResult }) {
+  const [phase, setPhase] = useState('idle');
+  const [reelItems, setReelItems] = useState(() => Array.from({length:20}, weightedRandom));
+  const [winPrize, setWinPrize] = useState(null);
+  const trackRef = useRef();
+  const winIdxRef = useRef(0);
+
+  const open = useCallback(() => {
+    const prize = weightedRandom();
+    setWinPrize(prize);
+    const { items, winIdx } = buildReel(prize);
+    winIdxRef.current = winIdx;
+    setReelItems(items);
+    setPhase('spinning');
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!trackRef.current) return;
+      const vw = trackRef.current.parentElement?.offsetWidth || 860;
+      const center = vw / 2 - CARD_W / 2;
+      const target = -(winIdx * CARD_STEP - center);
+      trackRef.current.style.transition = 'none';
+      trackRef.current.style.transform = 'translateX(0)';
+      requestAnimationFrame(() => {
+        trackRef.current.style.transition = 'transform 3800ms cubic-bezier(0.08,1,0.2,1)';
+        trackRef.current.style.transform = `translateX(${target}px)`;
+      });
+    }));
+
+    setTimeout(() => {
+      // burst particle at center of reel
+      const reelEl = document.querySelector('.reel-wrap');
+      if (reelEl) {
+        const r = reelEl.getBoundingClientRect();
+        burst(r.left + r.width/2, r.top + r.height/2, TIER_META[prize.tier].color, prize.tier === 'legendary' ? 60 : prize.tier === 'epic' ? 44 : 28);
+      }
+      setPhase('done');
+      setTimeout(() => onResult(prize), 500);
+    }, 3900);
+  }, [onResult]);
+
+  const isSpinning = phase === 'spinning';
+
+  return (
+    <div className="screen" data-screen-label="Game" style={{ justifyContent:'flex-start' }}>
+      {/* Topbar */}
+      <div className="topbar">
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:28, height:28, borderRadius:6, background:'linear-gradient(135deg,var(--orange),var(--orange2))', display:'flex',alignItems:'center',justifyContent:'center' }}>
+            <span style={{ fontSize:'0.75rem', fontWeight:900, color:'#000' }}>Z</span>
+          </div>
+          <span style={{ fontSize:'0.875rem', fontWeight:600, color:'var(--text)' }}>{playerName}</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          {Array.from({length: totalAttempts}).map((_,i) => (
+            <div key={i} style={{
+              width:8, height:8, borderRadius:'50%',
+              background: i < (totalAttempts - attemptsLeft) ? 'var(--orange)' : 'var(--border2)',
+              boxShadow: i < (totalAttempts - attemptsLeft) ? '0 0 6px var(--orange)' : 'none',
+              transition:'all 300ms',
+            }} />
+          ))}
+          <span style={{ fontFamily:'var(--mono)', fontSize:'0.75rem', color:'var(--text2)', marginLeft:8 }}>
+            {attemptsLeft} left
+          </span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', width:'100%', padding:'0 40px', gap:32, paddingTop:64 }}>
+
+        {/* Title */}
+        <div style={{ textAlign:'center' }}>
+          <p className="label" style={{ marginBottom:10 }}>Attempt {totalAttempts - attemptsLeft + 1} of {totalAttempts}</p>
+          <h2 style={{ fontSize:'2rem', fontWeight:800, color:'var(--text)', letterSpacing:'-0.02em' }}>
+            {isSpinning ? 'Spinning…' : 'Open Your Case'}
+          </h2>
+        </div>
+
+        {/* Reel */}
+        <div style={{ width:'100%', maxWidth:860 }}>
+          <div className="reel-wrap" style={{ position:'relative', height:168, display:'flex', alignItems:'center' }}>
+            {/* Fade edges */}
+            <div style={{ position:'absolute',left:0,top:0,bottom:0,width:140,background:'linear-gradient(to right, rgba(7,14,28,1) 0%, transparent 100%)',zIndex:2,pointerEvents:'none' }} />
+            <div style={{ position:'absolute',right:0,top:0,bottom:0,width:140,background:'linear-gradient(to left, rgba(7,14,28,1) 0%, transparent 100%)',zIndex:2,pointerEvents:'none' }} />
+
+            {/* Center marker */}
+            <div style={{ position:'absolute',left:'50%',top:0,bottom:0,width:2,zIndex:3, transform:'translateX(-50%)',
+              background:'linear-gradient(180deg, transparent, var(--orange) 30%, var(--orange) 70%, transparent)',
+              boxShadow:'0 0 16px rgba(232,97,26,0.5)',
+            }} />
+            <div style={{ position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:3,
+              width:CARD_W+8, height:CARD_W+32, border:`2px solid rgba(232,97,26,0.4)`,
+              borderRadius:12, pointerEvents:'none',
+              boxShadow:'0 0 24px rgba(232,97,26,0.15), inset 0 0 24px rgba(232,97,26,0.05)',
+            }} />
+
+            {/* Scan line while spinning */}
+            {isSpinning && (
+              <div style={{ position:'absolute',left:0,right:0,height:2,background:'linear-gradient(90deg,transparent,rgba(232,97,26,0.6),transparent)',zIndex:4,
+                animation:'scan 1s linear infinite',
+              }} />
+            )}
+
+            {/* Track */}
+            <div style={{ paddingLeft:20, overflow:'visible', position:'relative', zIndex:1, width:'100%' }}>
+              <div ref={trackRef} className="reel-track">
+                {reelItems.map((p, i) => <ReelCardView key={i} prize={p} highlighted={false} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Prize legend */}
+        <div style={{ display:'flex', gap:20, alignItems:'center', flexWrap:'wrap', justifyContent:'center' }}>
+          {Object.entries(TIER_META).map(([tier, m]) => (
+            <div key={tier} style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:m.color, boxShadow:`0 0 6px ${m.glow}` }} />
+              <span style={{ fontSize:'0.7rem', fontWeight:600, color:'var(--text2)', letterSpacing:'0.08em', textTransform:'uppercase' }}>{m.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Button */}
+        <div style={{ width:'100%', maxWidth:360 }}>
+          <button className="btn btn-primary" onClick={open} disabled={isSpinning || phase==='done'} style={{ borderRadius:12, fontSize:'1rem', fontWeight:800, letterSpacing:'0.1em' }}>
+            {isSpinning ? (
+              <span style={{ display:'flex', alignItems:'center', gap:10, justifyContent:'center' }}>
+                <span className="spin" /> OPENING…
+              </span>
+            ) : 'OPEN CASE'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Result ────────────────────────────────────────────────────────────────── */
+function ResultScreen({ prize, attemptsLeft, onContinue }) {
+  const m = TIER_META[prize.tier];
+  const isHigh = prize.tier === 'epic' || prize.tier === 'legendary';
+
+  return (
+    <div className="screen" data-screen-label="Result" style={{ overflow:'hidden' }}>
+      {/* Ambient background */}
+      <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse 60% 50% at 50% 50%, ${m.glow} 0%, transparent 70%)`, pointerEvents:'none', zIndex:0 }} />
+
+      {prize.tier === 'legendary' && (
+        <>
+          <div style={{ position:'absolute', width:400, height:400, borderRadius:'50%', border:`1px solid ${m.color}`, opacity:0.15, animation:'pulse-ring 2s ease-out infinite', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:0 }} />
+          <div style={{ position:'absolute', width:400, height:400, borderRadius:'50%', border:`1px solid ${m.color}`, opacity:0.1, animation:'pulse-ring 2s 0.6s ease-out infinite', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:0 }} />
+        </>
+      )}
+
+      <div style={{ position:'relative', zIndex:1, textAlign:'center', padding:'0 24px', animation:'result-pop 500ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
+
+        {/* Icon */}
+        <div style={{ marginBottom:28, animation:'float 3s ease-in-out infinite' }}>
+          <div style={{
+            width:120, height:120, borderRadius:24, margin:'0 auto',
+            background:`linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)`,
+            border:`2px solid ${m.color}`,
+            boxShadow:`0 0 40px ${m.glow}, inset 0 0 24px ${m.glow}`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <PrizeIcon prizeId={prize.id} tier={prize.tier} size={70} />
+          </div>
+        </div>
+
+        {/* Tier badge */}
+        <div style={{ marginBottom:12 }}>
+          <span style={{
+            display:'inline-block', padding:'5px 16px', borderRadius:999,
+            border:`1px solid ${m.color}`, background:`rgba(${m.color.replace(/[^,\d]/g,'')},0.1)`,
+            fontSize:'0.7rem', fontWeight:800, letterSpacing:'0.18em', textTransform:'uppercase',
+            color: m.color,
+            animation: isHigh ? 'tier-shine 2s ease-in-out infinite' : 'none',
+          }}>
+            {m.label}
+          </span>
+        </div>
+
+        {/* Name */}
+        <h2 style={{ fontSize:'clamp(2rem,5vw,3.5rem)', fontWeight:900, letterSpacing:'-0.03em', color:'var(--text)', marginBottom:8 }}>
+          {prize.name}
+        </h2>
+        <p style={{ fontSize:'1rem', color:'var(--text2)', marginBottom:40 }}>{prize.sub}</p>
+
+        {/* CTA */}
+        <div style={{ maxWidth:320, margin:'0 auto', display:'flex', flexDirection:'column', gap:12 }}>
+          <button className="btn btn-primary" onClick={onContinue} style={{ borderRadius:12, fontSize:'1rem', fontWeight:800, letterSpacing:'0.06em' }}>
+            {attemptsLeft > 0 ? `CONTINUE · ${attemptsLeft} LEFT` : 'VIEW SUMMARY'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Summary ───────────────────────────────────────────────────────────────── */
+function SummaryScreen({ playerName, history, onPlayAgain }) {
+  const best = history.reduce((b, h) => TIER_ORDER.indexOf(h.tier) > TIER_ORDER.indexOf(b.tier) ? h : b);
+
+  return (
+    <div className="screen" data-screen-label="Summary" style={{ justifyContent:'flex-start', alignItems:'stretch', overflowY:'auto' }}>
+      <div className="topbar">
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:28, height:28, borderRadius:6, background:'linear-gradient(135deg,var(--orange),var(--orange2))', display:'flex',alignItems:'center',justifyContent:'center' }}>
+            <span style={{ fontSize:'0.75rem', fontWeight:900, color:'#000' }}>Z</span>
+          </div>
+          <span style={{ fontSize:'0.875rem', fontWeight:600, color:'var(--text)' }}>Summary</span>
+        </div>
+        <span style={{ fontSize:'0.75rem', color:'var(--text2)' }}>{playerName}</span>
+      </div>
+
+      <div style={{ flex:1, display:'flex', justifyContent:'center', padding:'80px 24px 40px', overflowY:'auto' }}>
+        <div style={{ width:'100%', maxWidth:560 }}>
+
+          {/* Best reward hero */}
+          <div className="card" style={{ padding:28, marginBottom:20, position:'relative', overflow:'hidden',
+            borderColor:`rgba(${TIER_META[best.tier].color.replace(/[^,\d]/g,'')},0.3)` }}>
+            <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse 70% 60% at 50% 50%, ${TIER_META[best.tier].glow} 0%, transparent 70%)`, opacity:0.5, pointerEvents:'none' }} />
+            <p className="label" style={{ marginBottom:16, position:'relative' }}>Best Reward</p>
+            <div style={{ display:'flex', alignItems:'center', gap:20, position:'relative' }}>
+              <div style={{ width:72, height:72, borderRadius:14, border:`1px solid ${TIER_META[best.tier].color}`,
+                background:'rgba(255,255,255,0.04)', display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow:`0 0 20px ${TIER_META[best.tier].glow}`,
+                flexShrink:0,
+              }}>
+                <PrizeIcon prizeId={best.id} tier={best.tier} size={44} />
+              </div>
+              <div>
+                <p style={{ fontSize:'0.7rem', fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:TIER_META[best.tier].color, marginBottom:4 }}>{TIER_META[best.tier].label}</p>
+                <p style={{ fontSize:'1.5rem', fontWeight:800, color:'var(--text)', letterSpacing:'-0.02em' }}>{best.name}</p>
+                <p style={{ fontSize:'0.85rem', color:'var(--text2)' }}>{best.sub}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* All results */}
+          <div className="card" style={{ overflow:'hidden', marginBottom:28 }}>
+            <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border)' }}>
+              <p className="label">{history.length} Open{history.length !== 1 ? 's' : ''}</p>
+            </div>
+            {history.map((h, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 20px',
+                borderBottom: i < history.length-1 ? '1px solid var(--border)' : 'none',
+                transition:'background 150ms',
+              }}
+                onMouseEnter={e => e.currentTarget.style.background='var(--surface2)'}
+                onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                <span style={{ fontFamily:'var(--mono)', fontSize:'0.75rem', color:'var(--text3)', width:24, flexShrink:0 }}>#{i+1}</span>
+                <div style={{ width:36, height:36, borderRadius:8, border:`1px solid ${TIER_META[h.tier].color}`,
+                  background:'rgba(255,255,255,0.03)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <PrizeIcon prizeId={h.id} tier={h.tier} size={22} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:'0.875rem', fontWeight:600, color:'var(--text)' }}>{h.name}</p>
+                  <p style={{ fontSize:'0.75rem', color:'var(--text2)' }}>{h.sub}</p>
+                </div>
+                <span style={{ fontSize:'0.75rem', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:TIER_META[h.tier].color }}>
+                  {TIER_META[h.tier].label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button className="btn btn-primary" onClick={onPlayAgain} style={{ borderRadius:12, fontWeight:800, letterSpacing:'0.08em', fontSize:'1rem' }}>
+            PLAY AGAIN
+          </button>
+
+          <p style={{ textAlign:'center', marginTop:24, fontSize:'0.65rem', letterSpacing:'0.14em', color:'var(--text3)', textTransform:'uppercase' }}>
+            Zenith Comp Co., Ltd.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Admin ─────────────────────────────────────────────────────────────────── */
+const MOCK_HIST = [
+  { user:'Alex Chen',    tier:'epic',      name:'Hoodie',    time:'14:32' },
+  { user:'Sam Rivera',   tier:'common',    name:'Better Luck!', time:'14:29' },
+  { user:'Jordan Lee',   tier:'rare',      name:'T-Shirt',   time:'14:25' },
+  { user:'Morgan Kim',   tier:'legendary', name:'Swag Box',  time:'14:18' },
+  { user:'Casey Park',   tier:'rare',      name:'Power Bank',time:'14:11' },
+  { user:'Taylor Nguyen',tier:'common',    name:'Sticker Set',time:'14:05' },
+  { user:'Riley Wu',     tier:'epic',      name:'Backpack',  time:'13:58' },
+  { user:'Drew Patel',   tier:'common',    name:'Better Luck!',time:'13:50' },
+];
+const INVENTORY = [
+  { name:'Sticker Set', tier:'rare',      total:80, used:58 },
+  { name:'T-Shirt',     tier:'rare',      total:80, used:64 },
+  { name:'Power Bank',  tier:'rare',      total:40, used:27 },
+  { name:'Hoodie',      tier:'epic',      total:30, used:22 },
+  { name:'Backpack',    tier:'epic',      total:15, used:11 },
+  { name:'Swag Box',    tier:'legendary', total:10, used:8  },
+  { name:'VIP Upgrade', tier:'legendary', total:4,  used:3  },
+];
+
+function AdminDashboard({ onLogout }) {
+  const [tab, setTab] = useState('overview');
+  const [weights, setWeights] = useState({ common:73, rare:19, epic:7, legendary:1 });
+  const total = Object.values(weights).reduce((s,v)=>s+v,0);
+
+  return (
+    <div className="screen" data-screen-label="Admin Dashboard" style={{ justifyContent:'flex-start', alignItems:'stretch' }}>
+      <div className="topbar">
+        <div style={{ display:'flex', alignItems:'center', gap:24 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:28,height:28,borderRadius:6,background:'linear-gradient(135deg,var(--orange),var(--orange2))',display:'flex',alignItems:'center',justifyContent:'center' }}>
+              <span style={{ fontSize:'0.75rem',fontWeight:900,color:'#000' }}>Z</span>
+            </div>
+            <span style={{ fontSize:'0.75rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--text2)' }}>Admin</span>
+          </div>
+          <div style={{ display:'flex', gap:2 }}>
+            {['overview','prizes','probability','history'].map(t => (
+              <button key={t} onClick={()=>setTab(t)} style={{
+                fontFamily:'var(--font)', fontSize:'0.8rem', fontWeight: tab===t ? 600 : 400,
+                color: tab===t ? 'var(--text)' : 'var(--text2)',
+                background:'none', border:'none', cursor:'pointer',
+                padding:'6px 14px', borderBottom: tab===t ? '2px solid var(--orange)' : '2px solid transparent',
+                textTransform:'capitalize', transition:'color 150ms',
+              }}>
+                {t.charAt(0).toUpperCase()+t.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={onLogout} style={{ fontFamily:'var(--font)', fontSize:'0.8rem', color:'var(--text2)', background:'none', border:'none', cursor:'pointer' }}>
+          Sign out
+        </button>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'32px 40px' }}>
+
+        {tab === 'overview' && (
+          <div style={{ maxWidth:1100 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
+              {[['148','Participants'],['602','Total Opens'],['4','Active Now'],['3 / 4','VIP Remaining']].map(([v,l]) => (
+                <div key={l} className="card" style={{ padding:'20px 22px' }}>
+                  <div style={{ fontFamily:'var(--mono)', fontSize:'2.2rem', fontWeight:700, color:'var(--text)', lineHeight:1, marginBottom:6 }}>{v}</div>
+                  <div className="label">{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+              <div className="card" style={{ padding:24 }}>
+                <p className="label" style={{ marginBottom:20 }}>Reward Distribution</p>
+                {[{tier:'common',pct:73},{tier:'rare',pct:19},{tier:'epic',pct:7},{tier:'legendary',pct:1}].map(d => (
+                  <div key={d.tier} style={{ marginBottom:14 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
+                      <span style={{ fontSize:'0.8rem', fontWeight:600, color:TIER_META[d.tier].color }}>{TIER_META[d.tier].label}</span>
+                      <span style={{ fontFamily:'var(--mono)', fontSize:'0.8rem', color:'var(--text2)' }}>{d.pct}%</span>
+                    </div>
+                    <div style={{ height:4, background:'var(--border2)', borderRadius:2 }}>
+                      <div style={{ width:`${d.pct}%`, height:'100%', background:TIER_META[d.tier].color, borderRadius:2, boxShadow:`0 0 8px ${TIER_META[d.tier].glow}` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="card" style={{ padding:24 }}>
+                <p className="label" style={{ marginBottom:20 }}>Recent Activity</p>
+                {MOCK_HIST.slice(0,5).map((h,i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom: i<4?'1px solid var(--border)':'none' }}>
+                    <div style={{ width:6,height:6,borderRadius:'50%',background:TIER_META[h.tier].color,boxShadow:`0 0 6px ${TIER_META[h.tier].glow}`,flexShrink:0 }} />
+                    <span style={{ fontSize:'0.8rem', color:'var(--text)', flex:1 }}>{h.user}</span>
+                    <span style={{ fontSize:'0.8rem', color:TIER_META[h.tier].color, fontWeight:600 }}>{TIER_META[h.tier].label}</span>
+                    <span style={{ fontFamily:'var(--mono)', fontSize:'0.7rem', color:'var(--text3)' }}>{h.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'prizes' && (
+          <div style={{ maxWidth:700 }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:700, color:'var(--text)', marginBottom:20 }}>Prize Inventory</h2>
+            <div className="card" style={{ overflow:'hidden' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 64px 64px 1fr', padding:'10px 20px', borderBottom:'1px solid var(--border)' }}>
+                {['Prize','Total','Used','Stock'].map(h => <span key={h} className="label">{h}</span>)}
+              </div>
+              {INVENTORY.map((p,i) => {
+                const pct = p.used/p.total;
+                const sc = pct>=1?'#EF4444':pct>=0.8?'var(--orange)':'var(--text2)';
+                return (
+                  <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 64px 64px 1fr', padding:'13px 20px',
+                    borderBottom:i<INVENTORY.length-1?'1px solid var(--border)':'none', transition:'background 150ms' }}
+                    onMouseEnter={e=>e.currentTarget.style.background='var(--surface2)'}
+                    onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ width:6,height:6,borderRadius:'50%',background:TIER_META[p.tier].color,flexShrink:0 }} />
+                      <span style={{ fontSize:'0.85rem', color:'var(--text)' }}>{p.name}</span>
+                    </div>
+                    <span style={{ fontFamily:'var(--mono)', fontSize:'0.85rem', color:'var(--text2)' }}>{p.total}</span>
+                    <span style={{ fontFamily:'var(--mono)', fontSize:'0.85rem', color:sc }}>{p.used}</span>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ flex:1, height:4, background:'var(--border2)', borderRadius:2 }}>
+                        <div style={{ width:`${Math.min(100,pct*100)}%`, height:'100%', background:sc, borderRadius:2 }} />
+                      </div>
+                      <span style={{ fontFamily:'var(--mono)', fontSize:'0.75rem', color:sc, width:28, textAlign:'right' }}>{p.total-p.used}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'probability' && (
+          <div style={{ maxWidth:480 }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:700, color:'var(--text)', marginBottom:6 }}>Drop Rates</h2>
+            <p style={{ fontSize:'0.85rem', color:'var(--text2)', marginBottom:24 }}>
+              Total: <span style={{ fontFamily:'var(--mono)', color: total===100?'var(--green)':'#EF4444', fontWeight:700 }}>{total}%</span>
+            </p>
+            <div className="card" style={{ padding:28 }}>
+              {Object.entries(weights).map(([tier,val]) => (
+                <div key={tier} style={{ marginBottom:24 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                    <span style={{ fontSize:'0.8rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:TIER_META[tier].color }}>{tier}</span>
+                    <span style={{ fontFamily:'var(--mono)', fontSize:'0.9rem', color:'var(--text)', fontWeight:700 }}>{val}%</span>
+                  </div>
+                  <input type="range" min={0} max={100} value={val}
+                    onChange={e => setWeights(w => ({...w,[tier]:Number(e.target.value)}))}
+                    style={{ width:'100%', accentColor:TIER_META[tier].color, cursor:'pointer' }} />
+                </div>
+              ))}
+              <button className="btn btn-primary" style={{ borderRadius:10, fontWeight:700 }}>SAVE RATES</button>
+            </div>
+          </div>
+        )}
+
+        {tab === 'history' && (
+          <div style={{ maxWidth:760 }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:700, color:'var(--text)', marginBottom:20 }}>Open History</h2>
+            <div className="card" style={{ overflow:'hidden' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 56px', padding:'10px 20px', borderBottom:'1px solid var(--border)' }}>
+                {['User','Prize','Tier','Time'].map(h => <span key={h} className="label">{h}</span>)}
+              </div>
+              {MOCK_HIST.map((h,i) => (
+                <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 56px', padding:'13px 20px',
+                  borderBottom:i<MOCK_HIST.length-1?'1px solid var(--border)':'none', transition:'background 150ms' }}
+                  onMouseEnter={e=>e.currentTarget.style.background='var(--surface2)'}
+                  onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                  <span style={{ fontSize:'0.85rem', color:'var(--text)' }}>{h.user}</span>
+                  <span style={{ fontSize:'0.85rem', color:'var(--text2)' }}>{h.name}</span>
+                  <span style={{ fontSize:'0.8rem', fontWeight:700, color:TIER_META[h.tier].color }}>{TIER_META[h.tier].label}</span>
+                  <span style={{ fontFamily:'var(--mono)', fontSize:'0.7rem', color:'var(--text3)' }}>{h.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdminLogin({ onLogin, onBack }) {
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState(false);
+  const ref = useRef();
+  useEffect(() => { ref.current?.focus(); }, []);
+  const attempt = () => {
+    if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) onLogin();
+    else { setError(true); setTimeout(() => setError(false), 700); }
+  };
+  return (
+    <div className="screen" data-screen-label="Admin Login">
+      <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:380, padding:'0 24px' }}>
+        <p className="label" style={{ textAlign:'center', marginBottom:32 }}>Admin Access</p>
+        <div className="card" style={{ padding:28 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:16 }}>
+            <input ref={ref} type="text" placeholder="Username" value={user} onChange={e=>setUser(e.target.value)} className={error?'err':''} onKeyDown={e=>e.key==='Enter'&&attempt()} />
+            <input type="password" placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} className={error?'err':''} onKeyDown={e=>e.key==='Enter'&&attempt()} />
+          </div>
+          <button className="btn btn-primary" onClick={attempt} style={{ borderRadius:10, fontWeight:700, marginBottom:10 }}>SIGN IN</button>
+          <button className="btn btn-ghost" onClick={onBack} style={{ width:'100%', borderRadius:10 }}>← Back</button>
+          <p style={{ textAlign:'center', marginTop:14, fontFamily:'var(--mono)', fontSize:'0.65rem', color:'var(--text3)' }}>admin / zenith</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── App ───────────────────────────────────────────────────────────────────── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#8B5CF6"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweakOpen, setTweakOpen] = useState(false);
+  const [screen, setScreen] = useState('welcome');
+  const [playerName, setPlayerName] = useState('');
+  const [totalAttempts, setTotalAttempts] = useState(3);
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [history, setHistory] = useState([]);
+  const [lastPrize, setLastPrize] = useState(null);
+  const [adminAuthed, setAdminAuthed] = useState(false);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (e.data?.type==='__activate_edit_mode') setTweakOpen(true);
+      if (e.data?.type==='__deactivate_edit_mode') setTweakOpen(false);
+    };
+    window.addEventListener('message', h);
+    window.parent.postMessage({ type:'__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', h);
+  }, []);
+
+  const handleStart = (name, tries, goAdmin=false) => {
+    if (goAdmin) { setScreen('admin-login'); return; }
+    setPlayerName(name); setTotalAttempts(tries); setAttemptsLeft(tries); setHistory([]); setScreen('game');
+  };
+
+  const handleResult = (prize) => {
+    setLastPrize(prize);
+    setHistory(h => [...h, prize]);
+    setAttemptsLeft(a => a - 1);
+    setScreen('result');
+  };
+
+  const handleContinue = () => {
+    if (attemptsLeft <= 0) setScreen('summary');
+    else setScreen('game');
+  };
+
+  return (
+    <div style={{ width:'100%', height:'100%', position:'relative' }}>
+      {screen==='welcome'    && <WelcomeScreen onStart={handleStart} />}
+      {screen==='game'       && <GameScreen key={`g${history.length}`} playerName={playerName} attemptsLeft={attemptsLeft} totalAttempts={totalAttempts} onResult={handleResult} />}
+      {screen==='result'     && lastPrize && <ResultScreen key={`r${history.length}`} prize={lastPrize} attemptsLeft={attemptsLeft} onContinue={handleContinue} />}
+      {screen==='summary'    && <SummaryScreen playerName={playerName} history={history} onPlayAgain={() => setScreen('welcome')} />}
+      {screen==='admin-login'&& <AdminLogin onLogin={() => { setAdminAuthed(true); setScreen('admin'); }} onBack={() => setScreen('welcome')} />}
+      {screen==='admin'      && adminAuthed && <AdminDashboard onLogout={() => { setAdminAuthed(false); setScreen('welcome'); }} />}
+
+      {tweakOpen && (
+        <div style={{ position:'fixed', bottom:24, right:24, background:'var(--secondary)', border:'1px solid var(--border2)', borderRadius:14, padding:24, width:260, zIndex:200, fontFamily:'var(--font)', boxShadow:'0 12px 48px rgba(0,0,0,0.7)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+            <span className="label">Tweaks</span>
+            <button onClick={()=>setTweakOpen(false)} style={{ background:'none',border:'none',color:'var(--text2)',cursor:'pointer',fontSize:'1rem' }}>✕</button>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <p className="label" style={{ marginBottom:10 }}>Accent Color</p>
+            <div style={{ display:'flex', gap:8 }}>
+              {['#E8611A','#3B82F6','#22C55E','#8B5CF6','#F5C842'].map(c => (
+                <div key={c} onClick={() => { document.documentElement.style.setProperty('--orange', c); window.parent.postMessage({type:'__edit_mode_set_keys',edits:{accentColor:c}},'*'); }}
+                  style={{ width:28,height:28,borderRadius:8,background:c,cursor:'pointer',border:'2px solid rgba(255,255,255,0.2)',boxSizing:'border-box' }} />
+              ))}
+            </div>
+          </div>
+          <div style={{ paddingTop:14, borderTop:'1px solid var(--border)', fontSize:'0.7rem', color:'var(--text3)', lineHeight:1.7 }}>
+            <b style={{color:'var(--text2)'}}>Flow:</b> Welcome → Game → Result → Summary<br/>
+            <b style={{color:'var(--text2)'}}>Admin:</b> admin / zenith
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

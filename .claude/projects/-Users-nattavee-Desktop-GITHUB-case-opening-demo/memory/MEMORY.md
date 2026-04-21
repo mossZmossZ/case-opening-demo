@@ -1,0 +1,2 @@
+- [CEO / Staff Engineer Role](user_role.md) — User is CEO/Staff Eng; AI is Senior SWE. Ask before architectural decisions.
+- [Zenith Project Overview](project_zenith_overview.md) — Case-opening lucky-draw app, 4 phases, React+Node+Mongo+K8s.

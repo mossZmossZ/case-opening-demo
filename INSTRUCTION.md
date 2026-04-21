@@ -1,0 +1,109 @@
+# INSTRUCTION.md — Zenith Case Opening Demo
+
+## Roles
+
+| Role | Person | Responsibility |
+|------|--------|----------------|
+| **Staff Engineer / CEO** | You (Human) | Final decisions, architecture approval, priority calls, business logic validation. If AI has any question or point of concern — **ask the CEO before proceeding.** |
+| **Senior Software Engineer (AI)** | Claude | Programming, design implementation, production-grade architecture, code reviews, DevOps. Knowledge covers frontend, backend, infra, and observability. |
+
+> **Standing rule:** If the AI encounters ambiguity, a risky tradeoff, or a decision that could affect cost/timeline/UX — stop and ask the CEO. Do not assume.
+
+---
+
+## Project Overview
+
+**Zenith Case Opening Demo** — A lucky-draw / case-opening web application for corporate events (e.g., Nutanix Cloud Native & AI Innovation Day).
+
+### User Flow
+1. **Welcome** — Enter name + select number of attempts
+2. **Game** — Spin a reel (weighted random) to land on a prize
+3. **Result** — Reveal the prize with tier-based animations
+4. **Summary** — Show all results, highlight best reward, play again
+
+### Admin Flow
+1. **Login** — Authenticate (username/password)
+2. **Dashboard** — Overview stats, recent activity
+3. **Prizes** — Manage prize inventory (CRUD, stock tracking)
+4. **Probability** — Adjust drop rates per tier (common/rare/epic/legendary)
+5. **History** — View all user opens with filters
+
+---
+
+## Source Materials
+
+| File | Purpose |
+|------|---------|
+| `stitch_case_opening_demo/zenith_forge/DESIGN.md` | Design system ("The Kinetic Foundry") — colors, typography, components |
+| `stitch_case_opening_demo/zenith_case_opening_landing/` | Stitch UI: Landing page (code.html + screen.png) |
+| `stitch_case_opening_demo/zenith_case_opening_reel/` | Stitch UI: Reel spinning page (code.html + screen.png) |
+| `stitch_case_opening_demo/zenith_prize_reveal/` | Stitch UI: Prize reveal page (code.html + screen.png) |
+| `stitch_case_opening_demo/Case Opening - Claude.html` | Full logic prototype — all screens + admin dashboard in one React file |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React JS |
+| Backend | Node.js (Express) |
+| Database | MongoDB (Mongoose) |
+| Cache (Phase 3+) | Redis |
+| Observability (Phase 4) | Istio, Kiali, Jaeger |
+| Container | Docker |
+| Orchestration (Phase 4) | Kubernetes |
+
+---
+
+## Phase Roadmap
+
+Each phase is documented in detail in a separate file to **save context and tokens** (lazy-load pattern).
+
+| Phase | Summary | Architecture | Deployment | Detail File |
+|-------|---------|-------------|------------|-------------|
+| **1** | Monolith — Frontend + Backend + MongoDB | Single Node.js server serves React + API | `npm install` local | [docs/phase-1.md](docs/phase-1.md) |
+| **2** | Split frontend/backend containers | React (nginx) + Node.js API + MongoDB | Docker Compose | [docs/phase-2.md](docs/phase-2.md) |
+| **3** | Microservices + Redis cache | Auth, Game, Admin, Prize services | Docker Compose | [docs/phase-3.md](docs/phase-3.md) |
+| **4** | Full K8s + Observability | All services + Istio mesh + Jaeger + Kiali | Kubernetes | [docs/phase-4.md](docs/phase-4.md) |
+
+> **Read only the phase file you are currently working on.** This keeps token usage low.
+
+---
+
+## Architecture & Tasks
+
+| Document | Purpose |
+|----------|---------|
+| [architecture.md](architecture.md) | Architecture diagrams for all 4 phases |
+| [task.md](task.md) | Full task breakdown with clear acceptance criteria |
+
+---
+
+## Key Design Decisions
+
+1. **Weighted random on server** — The prototype does client-side random. Production must do server-side weighted random to prevent manipulation.
+2. **Prize inventory tracking** — Admin sets total stock; server decrements on each win. Out-of-stock prizes are excluded from the pool.
+3. **Tier system** — 4 tiers: Common, Rare, Epic, Legendary. Each has distinct color/glow/animation per DESIGN.md.
+4. **Admin auth** — Phase 1: simple JWT. Phase 3+: dedicated auth microservice.
+5. **Design fidelity** — Follow the Stitch templates (Tailwind + Space Grotesk/Manrope + industrial aesthetic). The Claude.html logic prototype defines behavior; the stitch HTML files define visual style.
+
+---
+
+## Lazy-Load Convention
+
+To minimize token/context cost:
+- **INSTRUCTION.md** (this file) = always loaded, provides overview and pointers
+- **docs/phase-N.md** = loaded only when working on that phase
+- **architecture.md** = loaded when reviewing or planning architecture
+- **task.md** = loaded when picking up or reviewing tasks
+
+**Rule:** Never read all docs at once. Read only what the current task requires.
+
+---
+
+## Communication Protocol
+
+- AI asks CEO before: changing DB schema, adding new dependencies, altering user flow, modifying deployment strategy
+- AI proceeds autonomously on: implementing approved tasks, writing tests, fixing lint/build errors, refactoring within scope
+- When in doubt: ask. The cost of a question is near zero; the cost of a wrong assumption can be a full rewrite.
