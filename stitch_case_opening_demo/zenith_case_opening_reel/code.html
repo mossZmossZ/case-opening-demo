@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Zenith Comp Co. | Case Opening Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#ff7a2f",
+                    "primary": "#ff9159",
+                    "primary-fixed-dim": "#f66700",
+                    "tertiary-container": "#ebebeb",
+                    "inverse-surface": "#f8f9ff",
+                    "on-surface-variant": "#a8abb3",
+                    "on-primary-fixed-variant": "#4f1c00",
+                    "secondary-fixed-dim": "#bed1e7",
+                    "outline-variant": "#44484f",
+                    "background": "#0a0e14",
+                    "inverse-on-surface": "#51555c",
+                    "on-secondary": "#3e5063",
+                    "on-primary": "#531e00",
+                    "surface-container-highest": "#20262f",
+                    "secondary-dim": "#bed1e7",
+                    "primary-dim": "#ff7524",
+                    "tertiary-fixed": "#ffffff",
+                    "error-container": "#b92902",
+                    "surface-container-low": "#0f141a",
+                    "surface-container-lowest": "#000000",
+                    "surface": "#0a0e14",
+                    "surface-container-high": "#1b2028",
+                    "surface-bright": "#262c36",
+                    "inverse-primary": "#a14100",
+                    "secondary": "#ccdff6",
+                    "tertiary-dim": "#ebebeb",
+                    "on-primary-container": "#401500",
+                    "error": "#ff7351",
+                    "tertiary-fixed-dim": "#f0f1f1",
+                    "on-tertiary-fixed-variant": "#6c6d6e",
+                    "on-tertiary": "#5e5f60",
+                    "on-secondary-container": "#bfd2e9",
+                    "on-background": "#f1f3fc",
+                    "on-tertiary-container": "#555757",
+                    "secondary-fixed": "#ccdff6",
+                    "error-dim": "#d53d18",
+                    "on-secondary-fixed": "#2b3d4f",
+                    "surface-container": "#151a21",
+                    "secondary-container": "#36485b",
+                    "surface-tint": "#ff9159",
+                    "primary-container": "#ff7a2f",
+                    "outline": "#72757d",
+                    "surface-variant": "#20262f",
+                    "surface-dim": "#0a0e14",
+                    "on-secondary-fixed-variant": "#485a6d",
+                    "tertiary": "#f9f9f9",
+                    "on-error": "#450900",
+                    "on-tertiary-fixed": "#4f5051",
+                    "on-surface": "#f1f3fc",
+                    "on-primary-fixed": "#000000",
+                    "on-error-container": "#ffd2c8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .rarity-blue { border-bottom: 4px solid #3b82f6; }
+        .rarity-purple { border-bottom: 4px solid #a855f7; }
+        .rarity-pink { border-bottom: 4px solid #ec4899; }
+        .rarity-gold { border-bottom: 4px solid #eab308; }
+        .glow-gold { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full flex items-center justify-between px-8 py-4 bg-neutral-950/80 backdrop-blur-xl z-50 shadow-[0_4px_20px_rgba(255,107,0,0.1)]">
+<div class="text-2xl font-black tracking-tighter text-orange-500 uppercase font-headline">Zenith Comp Co.</div>
+<nav class="hidden md:flex items-center gap-8 font-headline tracking-tighter uppercase">
+<a class="text-neutral-400 font-medium hover:text-neutral-200 transition-all duration-150" href="#">Cases</a>
+<a class="text-orange-500 border-b-2 border-orange-500 pb-1" href="#">Inventory</a>
+<a class="text-neutral-400 font-medium hover:text-neutral-200 transition-all duration-150" href="#">Leaderboard</a>
+<a class="text-neutral-400 font-medium hover:text-neutral-200 transition-all duration-150" href="#">Hardware</a>
+</nav>
+<button class="bg-primary-container text-on-primary-container px-6 py-2 font-headline font-bold uppercase tracking-tighter scale-95 active:scale-90 transition-all hover:bg-neutral-800/50">
+            Connect Terminal
+        </button>
+</header>
+<div class="fixed top-[72px] bg-gradient-to-b from-neutral-800 to-transparent h-px w-full z-50"></div>
+<main class="pt-32 pb-24 min-h-screen px-4 md:px-12 flex flex-col items-center justify-center relative overflow-hidden">
+<!-- Ambient Glow Background -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/10 blur-[120px] rounded-full -z-10"></div>
+<!-- Case Header -->
+<div class="w-full max-w-6xl mb-12 flex justify-between items-end">
+<div>
+<h2 class="text-on-surface-variant font-headline uppercase tracking-[0.2em] text-sm mb-2">Operation: Cloud Native</h2>
+<h1 class="text-6xl font-black font-headline tracking-tighter uppercase">Titan Innovation Case</h1>
+</div>
+<div class="text-right">
+<span class="text-primary font-headline text-2xl font-bold tracking-tighter">LEVEL 42 ACCESS</span>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest mt-1">Nutanix AI Integration Tier</p>
+</div>
+</div>
+<!-- The Kinetic Foundry Reel Container -->
+<div class="w-full max-w-7xl relative group">
+<!-- Center Indicator -->
+<div class="absolute left-1/2 top-[-20px] bottom-[-20px] w-1 bg-primary z-40 -translate-x-1/2 shadow-[0_0_15px_#ff9159]">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rotate-45"></div>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rotate-45"></div>
+</div>
+<!-- Fade Edges -->
+<div class="absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-surface to-transparent z-30 pointer-events-none"></div>
+<div class="absolute inset-y-0 right-0 w-48 bg-gradient-to-l from-surface to-transparent z-30 pointer-events-none"></div>
+<!-- The Reel -->
+<div class="bg-surface-container-lowest overflow-hidden border-y border-outline-variant/20 py-8 relative">
+<div class="flex gap-4 px-4 overflow-x-auto no-scrollbar scroll-smooth">
+<!-- Prize Item 1 (Blue) -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-blue flex flex-col items-center justify-center p-4 group-hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="terminal">terminal</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">Cloud CLI Pro Kit</span>
+</div>
+<!-- Prize Item 2 (Purple) -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-purple flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="memory">memory</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">Node Cluster V2</span>
+</div>
+<!-- Prize Item 3 (Pink) -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-pink flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="security">security</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">Cyber Ghost Protocol</span>
+</div>
+<!-- Prize Item 4 (Gold - WINNER) -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-gold glow-gold flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-primary" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-headline font-bold uppercase text-sm tracking-tighter text-center text-primary">NVIDIA H100 AI GPU</span>
+</div>
+<!-- Prize Item 5 (Blue) -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-blue flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="cloud">cloud</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">$1000 Cloud Credit</span>
+</div>
+<!-- Repeat for filling the reel effect -->
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-purple flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="token">token</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">Exclusive Tech Swag</span>
+</div>
+<div class="min-w-[200px] aspect-square bg-surface-container-high rarity-blue flex flex-col items-center justify-center p-4">
+<span class="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" data-icon="router">router</span>
+<span class="font-headline font-bold uppercase text-xs tracking-tighter text-center">Core Node Access</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Interaction Zone -->
+<div class="mt-16 flex flex-col items-center">
+<div class="mb-8 text-center">
+<span class="font-headline text-primary-fixed-dim text-xl font-bold uppercase tracking-[0.3em]">Spinning...</span>
+<div class="w-64 h-1 bg-surface-container-high mt-4">
+<div class="h-full bg-gradient-to-r from-primary to-primary-fixed-dim w-3/4"></div>
+</div>
+</div>
+<button class="group relative px-12 py-5 bg-primary-container hover:bg-primary-fixed transition-all duration-300 transform hover:scale-105 active:scale-95">
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined font-bold" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-headline font-black text-2xl uppercase tracking-tighter">Execute Innovation Spin</span>
+</div>
+<!-- Button Glow -->
+<div class="absolute -inset-1 bg-primary/20 blur-xl group-hover:bg-primary/40 -z-10 transition-all"></div>
+</button>
+<p class="mt-6 text-on-surface-variant text-xs uppercase tracking-widest font-medium">Terminal Cost: 500 Credits per activation</p>
+</div>
+<!-- Inventory Preview (Bento Grid Style) -->
+<section class="w-full max-w-6xl mt-32 grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="md:col-span-2 bg-surface-container-high p-8 flex flex-col justify-between min-h-[240px]">
+<div>
+<h3 class="font-headline font-bold text-2xl uppercase tracking-tighter mb-2">Terminal Analytics</h3>
+<p class="text-on-surface-variant text-sm">System performance during current session.</p>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-6">
+<div class="bg-surface-container-lowest p-4">
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">Luck Modifier</p>
+<p class="text-xl font-headline font-black text-primary">+1.4x</p>
+</div>
+<div class="bg-surface-container-lowest p-4">
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">Global Drops</p>
+<p class="text-xl font-headline font-black">1.2M</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-8 border-l-4 border-primary">
+<h3 class="font-headline font-bold text-lg uppercase tracking-tighter mb-4">Live Drops</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-pink-500"></div>
+<span class="text-xs font-bold font-headline uppercase truncate">User_921 • Cyber Proto</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+<span class="text-xs font-bold font-headline uppercase truncate">AdminX • Cloud Kit</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-xs font-bold font-headline uppercase truncate">Dev_Zero • AI GPU</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-highest p-8 relative overflow-hidden group">
+<div class="absolute inset-0 opacity-20 transition-transform duration-700 group-hover:scale-110">
+<div class="absolute inset-0 bg-gradient-to-br from-primary to-transparent"></div>
+<img alt="Cyberpunk tech texture" class="w-full h-full object-cover mix-blend-overlay" data-alt="Close-up of futuristic hardware circuitry with glowing orange lines and metallic industrial details in high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTBwCfWtlY03DUpwVBVt3bLi4oExwL22T5xEblOEQksT9DaJzTkrO5iMDU_GPi70-lDYpD8RYJzE515tvptPus6lJ-0YWmH04CEmNpwTseOl1lYay721a-3zIHFjewQAr-8B5AQo3D2ynzH-bl7g89XW3z-JBj9HRy2O1SVh1JGFo4oqRUtR_U3Lh5UEa9wOInm4iWs98kjwaJiUsdBcdqfJEoVwm4NZM35LpqZwp1_ElSAICwgACgRNBGY1AtqRm3W2PqRAeLZARw"/>
+</div>
+<div class="relative z-10">
+<h3 class="font-headline font-bold text-lg uppercase tracking-tighter mb-2">Upgrade Slot</h3>
+<p class="text-xs text-on-surface-variant mb-4">Enhance your drop rates with kinetic cores.</p>
+<button class="text-[10px] font-bold uppercase tracking-widest border border-outline px-3 py-2 hover:bg-on-surface hover:text-surface transition-colors">Install Core</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full py-6 px-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-neutral-950 border-t border-neutral-900">
+<div class="font-['Manrope'] text-xs uppercase tracking-widest text-neutral-600">
+            © 2024 Zenith Comp Co., Ltd. - Nutanix Cloud Native &amp; AI Innovation Day
+        </div>
+<div class="flex gap-8">
+<a class="font-['Manrope'] text-xs uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors" href="#">Privacy Protocol</a>
+<a class="font-['Manrope'] text-xs uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors" href="#">Service Terms</a>
+<a class="font-['Manrope'] text-xs uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors" href="#">Terminal Support</a>
+</div>
+</footer>
+</body></html>
