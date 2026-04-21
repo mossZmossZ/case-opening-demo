@@ -24,6 +24,8 @@ export const gameApi = {
     request(`/game/spin/${sessionId}`, { body: {} }),
   getSession: (sessionId) =>
     request(`/game/session/${sessionId}`),
+  getStats: () =>
+    request('/game/stats'),
 };
 
 // Admin API

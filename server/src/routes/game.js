@@ -103,3 +103,46 @@ router.get('/session/:sessionId', async (req, res) => {
 });
 
 export default router;
+
+// GET /api/game/stats — public endpoint for live drops and inventory summary
+router.get('/stats', async (req, res) => {
+  try {
+    const recentActivity = await Session.aggregate([
+      { $unwind: '$results' },
+      { $sort: { 'results.timestamp': -1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          user: '$playerName',
+          name: '$results.prizeName',
+          tier: '$results.tier',
+          time: '$results.timestamp',
+        },
+      },
+    ]);
+
+    const prizes = await Prize.find({ active: true });
+    
+    let totalWeight = 0;
+    let legendaryWeight = 0;
+    let totalRemainingCases = 0;
+
+    prizes.forEach(p => {
+      totalWeight += p.weight;
+      if (p.tier === 'legendary') legendaryWeight += p.weight;
+      totalRemainingCases += p.remainingStock;
+    });
+
+    const legendaryDropRate = totalWeight > 0 ? ((legendaryWeight / totalWeight) * 100).toFixed(2) : 0;
+
+    res.json({
+      liveDrops: recentActivity,
+      inventory: {
+        remainingCases: totalRemainingCases,
+        legendaryDropRate: parseFloat(legendaryDropRate)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
