@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { adminApi } from '../../lib/api';
 import { TIER_META } from '../../lib/constants';
 
-const EMPTY_PRIZE = { name: '', description: '', tier: 'common', weight: 10, totalStock: 100, iconKey: 'consolation' };
+const EMPTY_PRIZE = { name: '', description: '', tier: 'common', weight: 10, totalStock: 100, iconKey: 'consolation', imageUrl: '' };
 
 const ICON_KEYS = ['consolation', 'sticker', 'tshirt', 'powerbank', 'hoodie', 'backpack', 'swagbox', 'vip'];
 
@@ -13,6 +13,20 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_PRIZE);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setForm(f => ({ ...f, imageUrl: ev.target.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setForm(f => ({ ...f, imageUrl: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const startEdit = (prize) => {
     setEditing(prize._id);
@@ -24,6 +38,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
       totalStock: prize.totalStock,
       remainingStock: prize.remainingStock,
       iconKey: prize.iconKey,
+      imageUrl: prize.imageUrl || '',
       active: prize.active,
     });
   };
@@ -127,6 +142,52 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
             )}
           </div>
 
+          {/* Image Upload */}
+          <div className="mb-5">
+            <label className={labelCls} htmlFor="prize-image-upload">Prize Image <span className="normal-case text-on-surface-variant/60 tracking-normal font-normal">(optional — shown in spin reel)</span></label>
+            <div className="flex items-start gap-4">
+              <label
+                htmlFor="prize-image-upload"
+                className="flex items-center gap-2 h-10 px-4 border border-outline-variant text-sm text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary"
+              >
+                <span className="material-symbols-outlined text-sm">upload</span>
+                {form.imageUrl ? 'Replace Image' : 'Upload Image'}
+                <input
+                  id="prize-image-upload"
+                  ref={fileInputRef}
+                  type="file"
+                  name="prize-image"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageUpload}
+                />
+              </label>
+              {form.imageUrl && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={form.imageUrl}
+                    alt="Prize preview"
+                    width={64}
+                    height={64}
+                    className="w-16 h-16 object-contain border border-outline-variant bg-surface-container-low rounded-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    aria-label="Remove prize image"
+                    className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-error transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 outline-none"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+            {!form.imageUrl && (
+              <p className="mt-1.5 text-[11px] text-on-surface-variant/60">No image — the reel card will show no graphic for this prize.</p>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <button
               onClick={save}
@@ -134,7 +195,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
               className="flex items-center gap-2 px-5 h-10 bg-primary text-on-primary text-sm font-bold hover:bg-primary-fixed transition-colors disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-sm">save</span>
-              {saving ? 'Saving...' : 'Save Prize'}
+              {saving ? 'Saving…' : 'Save Prize'}
             </button>
             <button
               onClick={cancel}

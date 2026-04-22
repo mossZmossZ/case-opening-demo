@@ -8,6 +8,7 @@ const prizeSchema = new mongoose.Schema({
   totalStock: { type: Number, required: true, min: 0 },
   remainingStock: { type: Number, required: true, min: 0 },
   iconKey: { type: String, required: true },
+  imageUrl: { type: String, default: '' },
   active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });

@@ -65,6 +65,14 @@ Status legend: `[ ]` todo | `[~]` in progress | `[x]` done
 - [ ] Error handling: API errors not yet shown as toast/banner — silent `.catch(console.error)` pattern used
 - [ ] Mobile layout: image hidden on mobile (< lg breakpoint) — acceptable for event kiosk use case
 
+### 1.9 Prize Image Upload
+- [x] Add `imageUrl` field (optional String, default `''`) to `Prize` Mongoose schema
+- [x] Pass `imageUrl` through `POST /api/admin/prizes` and `PUT /api/admin/prizes/:id`
+- [x] Admin › Prizes form: file input (image/*) → base64 via FileReader → stored as `imageUrl`
+- [x] Admin › Prizes form: image preview (64×64, `object-contain`) + Remove button when image is set
+- [x] Spin reel `ReelCard`: if `prize.imageUrl` exists → show `<img>` (120×120, `object-contain`); if absent → no graphic rendered
+- [x] Follows web-design-guidelines: labelled file input, `aria-label` on remove button, explicit `width`/`height` on all images, `focus-visible` ring on interactive elements
+
 ---
 
 ## Phase 2: Docker Compose (Frontend + Backend + DB)

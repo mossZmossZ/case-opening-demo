@@ -98,7 +98,7 @@ router.get('/prizes', async (req, res) => {
 // POST /api/admin/prizes
 router.post('/prizes', async (req, res) => {
   try {
-    const { name, description, tier, weight, totalStock, iconKey } = req.body;
+    const { name, description, tier, weight, totalStock, iconKey, imageUrl } = req.body;
     if (!name || !tier || weight == null || totalStock == null) {
       return res.status(400).json({ error: 'name, tier, weight, and totalStock are required' });
     }
@@ -111,6 +111,7 @@ router.post('/prizes', async (req, res) => {
       totalStock: Number(totalStock),
       remainingStock: Number(totalStock),
       iconKey: iconKey || 'consolation',
+      imageUrl: imageUrl || '',
     });
     res.status(201).json(prize);
   } catch (err) {
@@ -121,7 +122,7 @@ router.post('/prizes', async (req, res) => {
 // PUT /api/admin/prizes/:id
 router.put('/prizes/:id', async (req, res) => {
   try {
-    const { name, description, tier, weight, totalStock, remainingStock, iconKey, active } = req.body;
+    const { name, description, tier, weight, totalStock, remainingStock, iconKey, imageUrl, active } = req.body;
     const updates = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
@@ -130,6 +131,7 @@ router.put('/prizes/:id', async (req, res) => {
     if (totalStock !== undefined) updates.totalStock = Number(totalStock);
     if (remainingStock !== undefined) updates.remainingStock = Number(remainingStock);
     if (iconKey !== undefined) updates.iconKey = iconKey;
+    if (imageUrl !== undefined) updates.imageUrl = imageUrl;
     if (active !== undefined) updates.active = active;
 
     const prize = await Prize.findByIdAndUpdate(req.params.id, updates, { new: true });
