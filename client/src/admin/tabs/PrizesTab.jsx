@@ -13,14 +13,22 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_PRIZE);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setForm(f => ({ ...f, imageUrl: ev.target.result }));
-    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const { url } = await adminApi.uploadImage(token, file);
+      setForm(f => ({ ...f, imageUrl: url }));
+    } catch (err) {
+      alert('Image upload failed: ' + err.message);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } finally {
+      setUploading(false);
+    }
   };
 
   const clearImage = () => {
@@ -148,10 +156,10 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
             <div className="flex items-start gap-4">
               <label
                 htmlFor="prize-image-upload"
-                className="flex items-center gap-2 h-10 px-4 border border-outline-variant text-sm text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary"
+                className={`flex items-center gap-2 h-10 px-4 border border-outline-variant text-sm transition-colors focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary ${uploading ? 'opacity-50 cursor-not-allowed text-on-surface-variant' : 'hover:border-primary hover:text-primary text-on-surface-variant cursor-pointer'}`}
               >
-                <span className="material-symbols-outlined text-sm">upload</span>
-                {form.imageUrl ? 'Replace Image' : 'Upload Image'}
+                <span className="material-symbols-outlined text-sm">{uploading ? 'hourglass_empty' : 'upload'}</span>
+                {uploading ? 'Uploading…' : form.imageUrl ? 'Replace Image' : 'Upload Image'}
                 <input
                   id="prize-image-upload"
                   ref={fileInputRef}
@@ -159,6 +167,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
                   name="prize-image"
                   accept="image/*"
                   className="sr-only"
+                  disabled={uploading}
                   onChange={handleImageUpload}
                 />
               </label>
@@ -191,7 +200,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
           <div className="flex gap-3">
             <button
               onClick={save}
-              disabled={saving || !form.name}
+              disabled={saving || uploading || !form.name}
               className="flex items-center gap-2 px-5 h-10 bg-primary text-on-primary text-sm font-bold hover:bg-primary-fixed transition-colors disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-sm">save</span>

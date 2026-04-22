@@ -32,6 +32,21 @@ export const gameApi = {
 export const adminApi = {
   login: (username, password) =>
     request('/admin/login', { body: { username, password } }),
+  uploadImage: (token, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return fetch(`${BASE}/admin/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).then(async res => {
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(`Server returned non-JSON (${res.status}): ${text.slice(0, 200)}`); }
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      return data;
+    });
+  },
   getDashboard: (token) =>
     request('/admin/dashboard', { token }),
   getPrizes: (token) =>

@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 import AdminUser from '../models/AdminUser.js';
 import Prize from '../models/Prize.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { uploadToS3 } from '../services/s3.js';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -36,6 +40,17 @@ router.post('/login', async (req, res) => {
 
 // All routes below require admin JWT
 router.use(requireAdmin);
+
+// POST /api/admin/upload — upload prize image to S3, return URL
+router.post('/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/admin/dashboard
 router.get('/dashboard', async (req, res) => {

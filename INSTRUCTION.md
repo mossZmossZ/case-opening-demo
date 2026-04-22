@@ -49,6 +49,7 @@
 | Frontend | React JS |
 | Backend | Node.js (Express) |
 | Database | MongoDB (Mongoose) |
+| Object Storage | S3-compatible (AWS S3, MinIO, DigitalOcean Spaces) |
 | Cache (Phase 3+) | Redis |
 | Observability (Phase 4) | Istio, Kiali, Jaeger |
 | Container | Docker |
@@ -100,7 +101,7 @@ Phase 1 is **complete and running**. Full monolith stack is live on local `npm r
 - `GET /api/game/stats` is a **public** endpoint — returns `participants`, `totalOpens`, `liveDrops`, `inventory`. Same data as admin dashboard but no auth required.
 - Stats route must remain **before** `export default router` in `server/src/routes/game.js` (ordering bug fix applied 2026-04-22).
 - Welcome page initial state must include `participants: 0, totalOpens: 0` to prevent undefined → 0 display on load.
-- Prize `imageUrl` is stored as a base64 data URL in MongoDB (Phase 1 simplicity — no separate file storage service). Uploaded via the Admin › Prizes form; displayed in the spin reel. If no image is uploaded, the reel card shows **no graphic** (only the prize name).
+- Prize `imageUrl` is stored as an S3 object URL in MongoDB. Images are uploaded via `POST /api/admin/upload` (multipart) to an S3-compatible bucket; the returned URL is saved with the prize. If no image is uploaded, the reel card shows **no graphic** (only the prize name). Configured via `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` env vars.
 
 ---
 
