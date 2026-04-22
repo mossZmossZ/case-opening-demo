@@ -2,7 +2,5 @@ node_modules/
 dist/
 .env
 *.log
-/stich_case_opening_demo/*
-/.claude
-/.claude
+/stich_case_opening_demo
 /.claude
