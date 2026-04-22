@@ -33,10 +33,10 @@ export default function AdminDashboard({ token, onLogout }) {
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
-    <div className="animate-screen-in flex flex-col min-h-screen">
+    <div className="animate-screen-in flex flex-col min-h-screen bg-background">
       <Topbar
         left={
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 ml-2">
             <span className="text-xs font-bold tracking-[0.1em] uppercase text-on-surface-variant">Admin</span>
             <div className="flex gap-0.5">
               {TABS.map(t => (
@@ -56,7 +56,7 @@ export default function AdminDashboard({ token, onLogout }) {
           </div>
         }
         right={
-          <button onClick={onLogout} className="text-sm text-on-surface-variant hover:text-primary transition-colors">
+          <button onClick={onLogout} className="text-sm text-on-surface-variant hover:text-primary transition-colors font-body">
             Sign out
           </button>
         }
@@ -67,10 +67,10 @@ export default function AdminDashboard({ token, onLogout }) {
           <div className="flex items-center justify-center h-64 text-on-surface-variant">Loading...</div>
         ) : (
           <>
-            {tab === 'overview' && <OverviewTab dashboard={dashboard} />}
-            {tab === 'prizes' && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
-            {tab === 'probability' && <ProbabilityTab token={token} prizes={prizes} onRefresh={refresh} />}
-            {tab === 'history' && <HistoryTab token={token} />}
+            {tab === 'overview'     && <OverviewTab dashboard={dashboard} />}
+            {tab === 'prizes'       && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
+            {tab === 'probability'  && <ProbabilityTab token={token} prizes={prizes} onRefresh={refresh} />}
+            {tab === 'history'      && <HistoryTab token={token} />}
           </>
         )}
       </div>

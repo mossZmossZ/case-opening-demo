@@ -6,7 +6,6 @@ import Topbar from '../components/Topbar';
 export default function SummaryScreen({ session, onPlayAgain }) {
   const results = session.results || [];
 
-  // Find best result by tier rank
   const best = results.reduce((b, r) =>
     TIER_ORDER.indexOf(r.tier) > TIER_ORDER.indexOf(b.tier) ? r : b
   , results[0]);
@@ -14,9 +13,9 @@ export default function SummaryScreen({ session, onPlayAgain }) {
   const bestMeta = TIER_META[best?.tier] || TIER_META.common;
 
   return (
-    <div className="animate-screen-in flex flex-col min-h-screen">
+    <div className="animate-screen-in flex flex-col min-h-screen bg-background">
       <Topbar
-        left={<span className="text-sm font-semibold text-on-surface">Summary</span>}
+        left={<span className="text-sm font-semibold text-on-surface ml-2">Summary</span>}
         right={<span className="text-xs text-on-surface-variant">{session.playerName}</span>}
       />
 
@@ -26,11 +25,11 @@ export default function SummaryScreen({ session, onPlayAgain }) {
           {/* Best reward hero */}
           {best && (
             <div
-              className="glass-panel border rounded-2xl p-7 mb-5 relative overflow-hidden"
-              style={{ borderColor: `${bestMeta.color}30` }}
+              className="bg-white border rounded-2xl p-7 mb-5 relative overflow-hidden shadow-md"
+              style={{ borderColor: `${bestMeta.color}40` }}
             >
               <div
-                className="absolute inset-0 pointer-events-none opacity-50"
+                className="absolute inset-0 pointer-events-none opacity-40"
                 style={{ background: `radial-gradient(ellipse 70% 60% at 50% 50%, ${bestMeta.glow} 0%, transparent 70%)` }}
               />
               <p className="text-[0.7rem] font-bold tracking-[0.14em] uppercase text-on-surface-variant mb-4 relative">
@@ -38,11 +37,10 @@ export default function SummaryScreen({ session, onPlayAgain }) {
               </p>
               <div className="flex items-center gap-5 relative">
                 <div
-                  className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center shrink-0"
+                  className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center shrink-0 bg-surface-container-low"
                   style={{
                     border: `1px solid ${bestMeta.color}`,
-                    background: 'rgba(255,255,255,0.04)',
-                    boxShadow: `0 0 20px ${bestMeta.glow}`,
+                    boxShadow: `0 0 16px ${bestMeta.glow}`,
                   }}
                 >
                   <PrizeIcon iconKey={best.iconKey || 'consolation'} tier={best.tier} size={44} />
@@ -51,7 +49,7 @@ export default function SummaryScreen({ session, onPlayAgain }) {
                   <p className="text-[0.7rem] font-bold tracking-[0.12em] uppercase mb-1" style={{ color: bestMeta.color }}>
                     {bestMeta.label}
                   </p>
-                  <p className="text-2xl font-extrabold text-on-surface tracking-tight font-headline">
+                  <p className="text-2xl font-bold text-on-surface tracking-tight font-headline">
                     {best.prizeName}
                   </p>
                 </div>
@@ -60,8 +58,8 @@ export default function SummaryScreen({ session, onPlayAgain }) {
           )}
 
           {/* All results */}
-          <div className="glass-panel border border-outline-variant/30 rounded-2xl overflow-hidden mb-7">
-            <div className="px-5 py-4 border-b border-outline-variant/20">
+          <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden mb-7 shadow-sm">
+            <div className="px-5 py-4 border-b border-outline-variant bg-surface-container-low">
               <p className="text-[0.7rem] font-bold tracking-[0.14em] uppercase text-on-surface-variant">
                 {results.length} Open{results.length !== 1 ? 's' : ''}
               </p>
@@ -69,13 +67,13 @@ export default function SummaryScreen({ session, onPlayAgain }) {
             {results.map((r, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-surface-container-high"
-                style={{ borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}
+                className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-surface-container-low"
+                style={{ borderBottom: i < results.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}
               >
-                <span className="font-mono text-xs text-on-surface-variant/50 w-6 shrink-0">#{i + 1}</span>
+                <span className="font-mono text-xs text-on-surface-variant/60 w-6 shrink-0">#{i + 1}</span>
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ border: `1px solid ${TIER_META[r.tier]?.color || '#5A6A8A'}`, background: 'rgba(255,255,255,0.03)' }}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-surface-container-low"
+                  style={{ border: `1px solid ${TIER_META[r.tier]?.color || '#A8A098'}` }}
                 >
                   <PrizeIcon iconKey={r.iconKey || 'consolation'} tier={r.tier} size={22} />
                 </div>
@@ -94,12 +92,12 @@ export default function SummaryScreen({ session, onPlayAgain }) {
 
           <button
             onClick={onPlayAgain}
-            className="w-full h-14 rounded-xl bg-gradient-to-br from-primary to-primary-fixed text-black font-headline font-extrabold text-base tracking-[0.08em] transition-all hover:shadow-[0_0_32px_rgba(232,97,26,0.35)] hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full h-14 rounded-xl bg-primary text-on-primary font-headline font-bold text-base tracking-wide transition-all hover:bg-primary-fixed hover:shadow-[0_4px_24px_rgba(224,96,32,0.35)] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_2px_12px_rgba(224,96,32,0.2)]"
           >
-            Back to home
+            Back to Home
           </button>
 
-          <p className="text-center mt-6 text-[0.65rem] tracking-[0.14em] text-on-surface-variant/40 uppercase">
+          <p className="text-center mt-6 text-[0.65rem] tracking-[0.14em] text-on-surface-variant/50 uppercase">
             Zenith Comp Co., Ltd.
           </p>
         </div>

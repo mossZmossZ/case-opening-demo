@@ -42,7 +42,7 @@ export default function HistoryTab({ token }) {
             <div
               key={i}
               className="grid grid-cols-[1fr_1fr_1fr_80px] px-5 py-3 items-center transition-colors hover:bg-surface-container-high"
-              style={{ borderBottom: i < data.results.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+              style={{ borderBottom: i < data.results.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}
             >
               <span className="text-sm text-on-surface truncate">{h.user}</span>
               <span className="text-sm text-on-surface-variant truncate">{h.name}</span>
@@ -66,7 +66,7 @@ export default function HistoryTab({ token }) {
               onClick={() => loadPage(p)}
               className={`w-8 h-8 rounded-lg text-sm font-mono transition-all ${
                 p === data.page
-                  ? 'bg-primary text-black font-bold'
+                  ? 'bg-primary text-on-primary font-bold'
                   : 'text-on-surface-variant hover:bg-surface-container-high'
               }`}
             >

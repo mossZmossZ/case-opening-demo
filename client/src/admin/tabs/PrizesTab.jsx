@@ -122,7 +122,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
             )}
           </div>
           <div className="flex gap-2">
-            <button onClick={save} disabled={saving || !form.name} className="px-5 h-10 rounded-lg bg-primary text-black font-bold text-sm transition-all hover:bg-primary-fixed disabled:opacity-50">
+            <button onClick={save} disabled={saving || !form.name} className="px-5 h-10 rounded-lg bg-primary text-on-primary font-bold text-sm transition-all hover:bg-primary-fixed disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}
             </button>
             <button onClick={cancel} className="px-5 h-10 rounded-lg border border-outline-variant/30 text-on-surface-variant text-sm hover:border-outline">
@@ -146,7 +146,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
             <div
               key={p._id}
               className="grid grid-cols-[1fr_64px_64px_1fr_80px] px-5 py-3 items-center transition-colors hover:bg-surface-container-high"
-              style={{ borderBottom: i < prizes.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+              style={{ borderBottom: i < prizes.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}
             >
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: TIER_META[p.tier]?.color }} />

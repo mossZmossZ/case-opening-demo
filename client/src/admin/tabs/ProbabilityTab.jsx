@@ -109,7 +109,7 @@ export default function ProbabilityTab({ token, prizes, onRefresh }) {
         <button
           onClick={saveRates}
           disabled={saving}
-          className="w-full h-12 mt-4 rounded-xl bg-gradient-to-br from-primary to-primary-fixed text-black font-headline font-bold tracking-wide transition-all hover:shadow-[0_0_32px_rgba(232,97,26,0.35)] disabled:opacity-50"
+          className="w-full h-12 mt-4 rounded-xl bg-primary text-on-primary font-headline font-bold tracking-wide transition-all hover:bg-primary-fixed hover:shadow-[0_4px_20px_rgba(224,96,32,0.35)] disabled:opacity-50 shadow-[0_2px_10px_rgba(224,96,32,0.2)]"
         >
           {saving ? 'Saving...' : saved ? 'Saved!' : 'SAVE RATES'}
         </button>

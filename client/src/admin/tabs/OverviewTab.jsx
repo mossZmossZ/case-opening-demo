@@ -62,7 +62,7 @@ export default function OverviewTab({ dashboard }) {
             Recent Activity
           </p>
           {(dashboard.recentActivity || []).slice(0, 8).map((h, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2" style={{ borderBottom: i < 7 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <div key={i} className="flex items-center gap-2.5 py-2" style={{ borderBottom: i < 7 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
               <div className="w-1.5 h-1.5 rounded-full shrink-0"
                    style={{ background: TIER_META[h.tier]?.color, boxShadow: `0 0 6px ${TIER_META[h.tier]?.glow}` }} />
               <span className="text-sm text-on-surface flex-1 truncate">{h.user}</span>

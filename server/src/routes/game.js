@@ -122,6 +122,7 @@ router.get('/stats', async (req, res) => {
     ]);
 
     const prizes = await Prize.find({ active: true });
+    const totalUsers = await User.countDocuments();
     
     let totalWeight = 0;
     let legendaryWeight = 0;
@@ -139,7 +140,8 @@ router.get('/stats', async (req, res) => {
       liveDrops: recentActivity,
       inventory: {
         remainingCases: totalRemainingCases,
-        legendaryDropRate: parseFloat(legendaryDropRate)
+        legendaryDropRate: parseFloat(legendaryDropRate),
+        totalUsers
       }
     });
   } catch (err) {
