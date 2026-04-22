@@ -1,0 +1,78 @@
+name: Build & Push Docker Images
+
+# Triggers on version tags: v1.0.0, v1.2.3, etc.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CLIENT_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/case-opening-demo-client
+  SERVER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/case-opening-demo-server
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # 1. Checkout source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3. Enable multi-platform builds + layer caching
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Compute tags & labels for client image
+      #    e.g. tag v1.2.3 → 1.2.3 / 1.2 / latest
+      - name: Docker metadata — client
+        id: meta-client
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.CLIENT_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      # 5. Compute tags & labels for server image
+      - name: Docker metadata — server
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.SERVER_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      # 6. Build & push client image
+      - name: Build and push — client
+        uses: docker/build-push-action@v6
+        with:
+          context: ./client
+          push: true
+          tags: ${{ steps.meta-client.outputs.tags }}
+          labels: ${{ steps.meta-client.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 7. Build & push server image
+      - name: Build and push — server
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
