@@ -102,8 +102,6 @@ router.get('/session/:sessionId', async (req, res) => {
   }
 });
 
-export default router;
-
 // GET /api/game/stats — public endpoint for live drops and inventory summary
 router.get('/stats', async (req, res) => {
   try {
@@ -122,7 +120,13 @@ router.get('/stats', async (req, res) => {
     ]);
 
     const prizes = await Prize.find({ active: true });
-    const totalUsers = await User.countDocuments();
+
+    // Use the same queries as /api/admin/dashboard so numbers always match
+    const [participants, sessions] = await Promise.all([
+      User.countDocuments(),
+      Session.find({}, { results: 1 }).lean(),
+    ]);
+    const totalOpens = sessions.reduce((sum, s) => sum + (s.results?.length ?? 0), 0);
     
     let totalWeight = 0;
     let legendaryWeight = 0;
@@ -138,13 +142,16 @@ router.get('/stats', async (req, res) => {
 
     res.json({
       liveDrops: recentActivity,
+      participants,
+      totalOpens,
       inventory: {
         remainingCases: totalRemainingCases,
-        legendaryDropRate: parseFloat(legendaryDropRate),
-        totalUsers
+        legendaryDropRate: parseFloat(legendaryDropRate)
       }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+export default router;

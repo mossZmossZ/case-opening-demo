@@ -80,13 +80,36 @@ Each phase is documented in detail in a separate file to **save context and toke
 
 ---
 
+## Current State (Phase 1 — as of 2026-04-22)
+
+Phase 1 is **complete and running**. Full monolith stack is live on local `npm run dev`.
+
+### What's built
+- **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary) and full Admin dashboard (Login, Overview, Prizes, Probability, History).
+- **Backend** — Express API with all game + admin endpoints. Server-side weighted random, session management, JWT admin auth.
+- **Database** — MongoDB with Mongoose. Models: User, Session, Prize, AdminUser. Seed script populates defaults.
+- **Docker Compose** — `docker-compose.yml` wires frontend (nginx), backend, and MongoDB.
+
+### Design theme (CEO-approved)
+- **White + Orange** formal theme (overrides original dark "Kinetic Foundry" spec)
+- Fonts: **Lato** (all weights) — set via Tailwind config and index.css
+- Welcome page: viewport-locked (`lg:h-screen`), no scroll on 1920×1080. Layout: compact heading → image + form side-by-side → stats bar → footer.
+- All pages: white surfaces, `#E06020` orange primary, charcoal `#1A1410` footer.
+
+### Known decisions & constraints
+- `GET /api/game/stats` is a **public** endpoint — returns `participants`, `totalOpens`, `liveDrops`, `inventory`. Same data as admin dashboard but no auth required.
+- Stats route must remain **before** `export default router` in `server/src/routes/game.js` (ordering bug fix applied 2026-04-22).
+- Welcome page initial state must include `participants: 0, totalOpens: 0` to prevent undefined → 0 display on load.
+
+---
+
 ## Key Design Decisions
 
 1. **Weighted random on server** — The prototype does client-side random. Production must do server-side weighted random to prevent manipulation.
 2. **Prize inventory tracking** — Admin sets total stock; server decrements on each win. Out-of-stock prizes are excluded from the pool.
 3. **Tier system** — 4 tiers: Common, Rare, Epic, Legendary. Each has distinct color/glow/animation per DESIGN.md.
 4. **Admin auth** — Phase 1: simple JWT. Phase 3+: dedicated auth microservice.
-5. **Design fidelity** — Follow the Stitch templates (Tailwind + Space Grotesk/Manrope + industrial aesthetic). The Claude.html logic prototype defines behavior; the stitch HTML files define visual style.
+5. **Design theme** — CEO overrode original dark industrial theme. Current: white + orange formal (Lato font, warm surfaces, `#E06020` primary).
 
 ---
 

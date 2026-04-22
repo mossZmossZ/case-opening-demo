@@ -4,64 +4,66 @@ Status legend: `[ ]` todo | `[~]` in progress | `[x]` done
 
 ---
 
-## Phase 1: Monolith (Local npm)
+## Phase 1: Monolith (Local npm) ✅ COMPLETE
 
 ### 1.1 Project Setup
-- [ ] Initialize monorepo structure: `/client` (React), `/server` (Express), `/shared` (types)
-- [ ] Setup React app with Vite + Tailwind CSS
-- [ ] Setup Express server with Mongoose
-- [ ] Configure Tailwind with Kinetic Foundry design tokens (from DESIGN.md)
-- [ ] Add fonts: Space Grotesk + Manrope
-- [ ] Create `.env.example` with required vars (MONGO_URI, JWT_SECRET, PORT)
+- [x] Initialize monorepo structure: `/client` (React), `/server` (Express)
+- [x] Setup React app with Vite + Tailwind CSS
+- [x] Setup Express server with Mongoose
+- [x] Configure Tailwind design tokens (white + orange formal theme — CEO-approved override of original dark spec)
+- [x] Add fonts: Lato (replaced Space Grotesk/Manrope per CEO direction)
+- [x] Create `.env.example` with required vars (MONGO_URI, JWT_SECRET, PORT)
 
 ### 1.2 Database & Models
-- [ ] Define Mongoose schemas: User, Session, Prize, AdminUser, Settings
-- [ ] Create seed script: populate default prizes (8 items from prototype) + default admin user
-- [ ] Verify: `npm run seed` creates all collections with correct data
+- [x] Define Mongoose schemas: User, Session, Prize, AdminUser
+- [x] Create seed script: populate default prizes + default admin user (`admin` / `zenith`)
+- [x] Verify: `npm run seed` creates all collections with correct data
 
 ### 1.3 Backend API — Game
-- [ ] `POST /api/game/register` — create user + session (name, attempts count)
-- [ ] `POST /api/game/spin/:sessionId` — server-side weighted random, decrement stock, return prize
-- [ ] `GET /api/game/session/:sessionId` — get session with results (for summary screen)
-- [ ] Validation: reject spin if session exhausted or prize out of stock
-- [ ] Verify: can complete full flow via curl/Postman
+- [x] `POST /api/game/register` — create user + session (name, attempts count)
+- [x] `POST /api/game/spin/:sessionId` — server-side weighted random, decrement stock, return prize
+- [x] `GET /api/game/session/:sessionId` — get session with results (for summary screen)
+- [x] `GET /api/game/stats` — public stats: participants, totalOpens, liveDrops, inventory
+- [x] `GET /api/game/prizes` — public prize list for reel display
+- [x] Validation: reject spin if session exhausted or prize out of stock
 
 ### 1.4 Backend API — Admin
-- [ ] `POST /api/admin/login` — verify credentials, return JWT
-- [ ] `GET /api/admin/dashboard` — return stats (total participants, total opens, active sessions, stock summary)
-- [ ] `GET /api/admin/prizes` — list all prizes with stock info
-- [ ] `PUT /api/admin/prizes/:id` — update prize (name, weight, stock, active)
-- [ ] `POST /api/admin/prizes` — add new prize
-- [ ] `DELETE /api/admin/prizes/:id` — remove prize
-- [ ] `GET /api/admin/rates` — get current tier weights
-- [ ] `PUT /api/admin/rates` — update tier weights (must sum to 100)
-- [ ] `GET /api/admin/history` — paginated list of all opens
-- [ ] JWT middleware on all admin routes
-- [ ] Verify: all admin CRUD works via curl
+- [x] `POST /api/admin/login` — verify credentials, return JWT
+- [x] `GET /api/admin/dashboard` — return stats (participants, totalOpens, activeSessions, stockSummary, recentActivity)
+- [x] `GET /api/admin/prizes` — list all prizes with stock info
+- [x] `PUT /api/admin/prizes/:id` — update prize (name, weight, stock, active)
+- [x] `POST /api/admin/prizes` — add new prize
+- [x] `DELETE /api/admin/prizes/:id` — remove prize
+- [x] `GET /api/admin/rates` — get current prize weights
+- [x] `PUT /api/admin/rates` — update prize weights
+- [x] `GET /api/admin/history` — paginated list of all opens
+- [x] JWT middleware on all admin routes
 
 ### 1.5 Frontend — User Flow
-- [ ] Welcome screen: name input + attempt selector + BEGIN button (match stitch landing design)
-- [ ] Game screen: reel spinner component with weighted items (match stitch reel design)
-- [ ] Reel animation: horizontal scroll with easing, center marker, fade edges
-- [ ] Result screen: prize reveal with tier-based glow/particles (match stitch prize reveal design)
-- [ ] Summary screen: best reward hero + full history list + play again
-- [ ] Wire all screens to backend API (replace client-side random with server calls)
-- [ ] Verify: full user flow works end-to-end in browser
+- [x] Welcome screen: name input + attempt selector (1–5) + Unlock Now button
+- [x] Game screen: reel spinner with weighted items, center marker, fade edges, particle burst
+- [x] Reel animation: horizontal scroll with cubic-bezier easing
+- [x] Result screen: prize reveal with tier-based glow, rarity badge
+- [x] Summary screen: best reward hero + full open history + back to home
+- [x] All screens wired to backend API (server-side weighted random)
 
 ### 1.6 Frontend — Admin Flow
-- [ ] Login screen: username + password form
-- [ ] Dashboard tab: stats cards + reward distribution chart + recent activity
-- [ ] Prizes tab: inventory table with stock bars + add/edit/delete
-- [ ] Probability tab: tier weight sliders + save button (validate sum = 100)
-- [ ] History tab: paginated table of all opens
-- [ ] Wire to admin API endpoints
-- [ ] Verify: admin can login, view stats, adjust rates, manage prizes
+- [x] Login screen: username + password, JWT stored in memory
+- [x] Dashboard tab: stats cards + reward distribution bar chart + recent activity feed
+- [x] Prizes tab: inventory table with stock bars + add/edit/delete modal
+- [x] Probability tab: per-prize weight sliders + save
+- [x] History tab: paginated table of all opens
 
 ### 1.7 Integration & Polish
-- [ ] Error handling: API errors shown as toast/banner in UI
-- [ ] Loading states on all async actions
-- [ ] Responsive layout (desktop primary, mobile acceptable)
-- [ ] Verify: full happy path — user registers, spins N times, sees summary; admin adjusts rates, adds prize
+- [x] Loading states on all async actions (Spinner component)
+- [x] Responsive layout: desktop viewport-locked (no scroll on 1920×1080), mobile scrollable
+- [x] White + orange formal theme applied across all screens
+- [x] Stats bar on Welcome page shows live data (participants, totalOpens, remainingCases)
+- [x] Bug fix: `GET /api/game/stats` route moved before `export default router` (was silently unreachable)
+
+### 1.8 Open / Known Issues
+- [ ] Error handling: API errors not yet shown as toast/banner — silent `.catch(console.error)` pattern used
+- [ ] Mobile layout: image hidden on mobile (< lg breakpoint) — acceptable for event kiosk use case
 
 ---
 

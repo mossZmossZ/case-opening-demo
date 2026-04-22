@@ -12,12 +12,17 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
   const [tries, setTries] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [stats, setStats] = useState({ liveDrops: [], inventory: { remainingCases: 0, legendaryDropRate: 0 } });
+  const [stats, setStats] = useState({ liveDrops: [], participants: 0, totalOpens: 0, inventory: { remainingCases: 0, legendaryDropRate: 0 } });
   const inputRef = useRef();
 
   useEffect(() => {
     inputRef.current?.focus();
-    gameApi.getStats().then(setStats).catch(console.error);
+    gameApi.getStats()
+      .then(setStats)
+      .catch(() => {
+        // Retry once after 1.5 s (handles server-startup race condition)
+        setTimeout(() => gameApi.getStats().then(setStats).catch(() => {}), 1500);
+      });
   }, []);
 
   const handleGo = async () => {
@@ -223,9 +228,9 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
           {/* ── Section 3: Stats bar ── compact, fixed size ── */}
           <div className="flex-shrink-0 grid grid-cols-3 gap-4 animate-screen-in" style={{ animationDelay: '160ms' }}>
             {[
-              { icon: 'workspace_premium', value: stats.inventory.legendaryDropRate, unit: '%', label: 'Legendary Drop Rate' },
+              { icon: 'lock_open', value: stats.totalOpens || 0, unit: 'Opens', label: 'Total Opens' },
               { icon: 'inventory_2', value: stats.inventory.remainingCases, unit: 'Cases', label: 'Cases Remaining' },
-              { icon: 'group', value: stats.inventory.totalUsers || 0, unit: 'users', label: 'Total Participants' },
+              { icon: 'group', value: stats.participants || 0, unit: 'users', label: 'Total Participants' },
             ].map(({ icon, value, unit, label }) => (
               <div key={label} className="bg-white border border-outline-variant shadow-sm px-4 py-3 flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary/10 flex items-center justify-center shrink-0">

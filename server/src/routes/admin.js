@@ -48,7 +48,7 @@ router.get('/dashboard', async (req, res) => {
     ]);
 
     const totalOpens = await Session.aggregate([
-      { $project: { count: { $size: '$results' } } },
+      { $project: { count: { $size: { $ifNull: ['$results', []] } } } },
       { $group: { _id: null, total: { $sum: '$count' } } },
     ]);
 
