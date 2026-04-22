@@ -61,14 +61,14 @@ v<MAJOR>.<MINOR>.<PATCH>
 
 ---
 
-## Run with Docker Compose (production)
+## Run with Docker Compose (local build)
 
 ```bash
-# Build and start all services (client, server, mongodb)
+# Build images locally and start all services
 docker compose up --build -d
 
 # Seed the database (first run only)
-docker compose exec server node src/seed.js
+./init-db.sh
 
 # View logs
 docker compose logs -f
@@ -77,16 +77,43 @@ docker compose logs -f
 docker compose down
 ```
 
-App is available at **http://localhost**
+App is available at **http://localhost:8080**
 
 ---
 
-## Pull a specific release from Docker Hub
+## Run with Docker Compose (production — pull from Docker Hub)
 
 ```bash
-# Update docker-compose.yml to use pre-built images instead of building locally
-docker pull <your-username>/case-opening-demo-client:1.0.0
-docker pull <your-username>/case-opening-demo-server:1.0.0
+# 1. Create your prod env file from the example
+cp .env.prod.example .env.prod
+
+# 2. Edit .env.prod — set DOCKERHUB_USERNAME, IMAGE_TAG, JWT_SECRET
+#    Example:
+#      DOCKERHUB_USERNAME=myusername
+#      IMAGE_TAG=1.0.0
+#      JWT_SECRET=super-secret-random-string
+
+# 3. Pull images and start
+docker compose -f docker-compose-prod.yml --env-file .env.prod up -d
+
+# 4. Seed the database (first run only)
+docker compose -f docker-compose-prod.yml --env-file .env.prod exec server node src/seed.js
+
+# 5. View logs
+docker compose -f docker-compose-prod.yml --env-file .env.prod logs -f
+
+# 6. Stop
+docker compose -f docker-compose-prod.yml --env-file .env.prod down
+```
+
+App is available at **http://localhost:8080**
+
+### Deploy a specific version tag
+
+```bash
+# Edit .env.prod: IMAGE_TAG=1.2.0
+# Then restart
+docker compose -f docker-compose-prod.yml --env-file .env.prod up -d
 ```
 
 ---

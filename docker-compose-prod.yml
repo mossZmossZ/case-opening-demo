@@ -1,41 +1,38 @@
 services:
 
-  # ── React frontend served by nginx ──────────────────────────────────────────
+  # ── React frontend — pull from Docker Hub ───────────────────────────────────
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/case-opening-demo-client:${IMAGE_TAG:-latest}
     ports:
       - "8080:80"
     depends_on:
       server:
         condition: service_started
-    restart: unless-stopped
+    restart: always
 
-  # ── Express API server ───────────────────────────────────────────────────────
+  # ── Express API server — pull from Docker Hub ────────────────────────────────
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/case-opening-demo-server:${IMAGE_TAG:-latest}
     ports:
       - "4000:4000"
     environment:
       - MONGO_URI=mongodb://mongodb:27017/zenith
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET}
       - PORT=4000
     depends_on:
       mongodb:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
 
   # ── MongoDB ──────────────────────────────────────────────────────────────────
   mongodb:
     image: mongo:7
-    ports:
-      - "27017:27017"
+    # Port NOT exposed externally in prod — only reachable inside Docker network
+    expose:
+      - "27017"
     volumes:
       - mongo-data:/data/db
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
