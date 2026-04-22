@@ -40,5 +40,6 @@ export async function spinPrize() {
     description: updated.description,
     tier: updated.tier,
     iconKey: updated.iconKey,
+    imageUrl: updated.imageUrl || '',
   };
 }

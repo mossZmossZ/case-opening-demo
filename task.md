@@ -65,6 +65,16 @@ Status legend: `[ ]` todo | `[~]` in progress | `[x]` done
 - [ ] Error handling: API errors not yet shown as toast/banner — silent `.catch(console.error)` pattern used
 - [ ] Mobile layout: image hidden on mobile (< lg breakpoint) — acceptable for event kiosk use case
 
+### 1.10 Summary Screen Redesign
+- [x] Bug fix: `session.results[i].prizeName` → `r.name` (frontend state stores `name`, not `prizeName`)
+- [x] Server: `gameService.js` now returns `imageUrl` in spin response so it flows into `session.results`
+- [x] Summary screen: viewport-locked (`lg:h-screen lg:overflow-hidden`) matching all other screens
+- [x] Two-column layout (`lg:grid-cols-[2fr_3fr]`): left = best reward hero card (same card style as ResultScreen), right = numbered attempt cards (#1–#5) + CTA
+- [x] Each attempt card: attempt number badge, prize image (56×56, `object-contain`) or `PrizeIcon` fallback, prize name + description, tier badge, "Best" marker on best prize
+- [x] Best reward left-accent strip (tier color) highlights the winning card
+- [x] `focus-visible:ring-*` on CTA button, explicit `width`/`height` + `alt` on all images
+- [x] Removed `Topbar` component dependency — uses standard fixed header matching WelcomeScreen/ResultScreen
+
 ### 1.9 Prize Image Upload
 - [x] Add `imageUrl` field (optional String, default `''`) to `Prize` Mongoose schema
 - [x] Pass `imageUrl` through `POST /api/admin/prizes` and `PUT /api/admin/prizes/:id`
@@ -72,6 +82,8 @@ Status legend: `[ ]` todo | `[~]` in progress | `[x]` done
 - [x] Admin › Prizes form: image preview (64×64, `object-contain`) + Remove button when image is set
 - [x] Spin reel `ReelCard`: if `prize.imageUrl` exists → show `<img>` (120×120, `object-contain`); if absent → no graphic rendered
 - [x] Follows web-design-guidelines: labelled file input, `aria-label` on remove button, explicit `width`/`height` on all images, `focus-visible` ring on interactive elements
+- [x] Result screen: show `prize.imageUrl` (240×240, `object-contain`) when set; if absent → no graphic (text-only, consistent with ReelCard behaviour). Removed hardcoded Google image URL and Material icon.
+- [x] Result screen: redesigned to viewport-lock at 1920×1080 (`lg:h-screen lg:overflow-hidden`) matching WelcomeScreen pattern. Two-column layout: left = prize card (fills column height), right = congratulations heading + tier badge + prize name + CTA. Added `focus-visible:ring-*` on CTA button. Footer matches WelcomeScreen slim style.
 
 ---
 
