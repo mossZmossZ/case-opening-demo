@@ -1,7 +1,33 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { gameApi } from '../lib/api';
-import { TIER_META, REEL_CARD_W, REEL_CARD_GAP, REEL_CARD_STEP, REEL_LEN } from '../lib/constants';
+import { TIER_META, REEL_LEN } from '../lib/constants';
 import { burst } from '../lib/particles';
+
+const CARD_W    = 200;
+const CARD_GAP  = 16;        // gap-4 = 16 px
+const CARD_STEP = CARD_W + CARD_GAP; // 216 px per slot
+const SPIN_DURATION = 5500;  // ms — CS:GO slow-reveal
+
+// Short white-noise burst → mechanical click (CS:GO tick)
+function playTick(audioCtx) {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const sr     = audioCtx.sampleRate;
+    const bufLen = Math.round(sr * 0.025);
+    const buf    = audioCtx.createBuffer(1, bufLen, sr);
+    const data   = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 8);
+    }
+    const src  = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.12;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start();
+  } catch { /* audio unavailable */ }
+}
 
 function buildReel(allPrizes, winPrize) {
   const items = Array.from({ length: REEL_LEN }, () =>
@@ -15,10 +41,10 @@ function buildReel(allPrizes, winPrize) {
 function ReelCard({ prize }) {
   const c = TIER_META[prize.tier]?.color || '#5A6A8A';
   let rarityClass = 'rarity-blue';
-  if (prize.tier === 'rare') rarityClass = 'rarity-blue';
-  if (prize.tier === 'epic') rarityClass = 'rarity-purple';
+  if (prize.tier === 'rare')      rarityClass = 'rarity-blue';
+  if (prize.tier === 'epic')      rarityClass = 'rarity-purple';
   if (prize.tier === 'legendary') rarityClass = 'rarity-gold glow-gold';
-  if (prize.tier === 'common') rarityClass = 'border-b-4 border-outline-variant';
+  if (prize.tier === 'common')    rarityClass = 'border-b-4 border-outline-variant';
 
   return (
     <div className={`shrink-0 w-[200px] aspect-square bg-white border border-outline-variant ${rarityClass} flex flex-col items-center justify-center p-4 transition-colors shadow-sm`}>
@@ -39,10 +65,12 @@ function ReelCard({ prize }) {
 }
 
 export default function GameScreen({ session, prizes, onResult }) {
-  const [phase, setPhase] = useState('idle');
+  const [phase, setPhase]         = useState('idle');
   const [reelItems, setReelItems] = useState([]);
-  const [stats, setStats] = useState({ liveDrops: [] });
-  const trackRef = useRef();
+  const [stats, setStats]         = useState({ liveDrops: [] });
+  const trackRef    = useRef();
+  const audioCtxRef = useRef(null);
+  const tickRafRef  = useRef(null);
 
   useEffect(() => {
     if (prizes.length > 0) {
@@ -53,45 +81,94 @@ export default function GameScreen({ session, prizes, onResult }) {
     gameApi.getStats().then(setStats).catch(console.error);
   }, [prizes]);
 
+  // Cleanup tick RAF if component unmounts mid-spin
+  useEffect(() => () => { cancelAnimationFrame(tickRafRef.current); }, []);
+
   const attemptsUsed = session.results ? session.results.length : 0;
   const attemptsLeft = session.totalAttempts - attemptsUsed;
 
   const openCase = useCallback(async () => {
     if (phase !== 'idle') return;
+
+    // Create AudioContext inside the user-gesture handler (browser autoplay policy)
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      } catch { /* unavailable */ }
+    }
+
+    const prefersReducedMotion =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const duration = prefersReducedMotion ? 800 : SPIN_DURATION;
+
     setPhase('spinning');
 
     try {
-      const result = await gameApi.spin(session.sessionId);
+      const result   = await gameApi.spin(session.sessionId);
       const winPrize = result.prize;
 
       const { items, winIdx } = buildReel(prizes, winPrize);
       setReelItems(items);
 
+      // Two rAF frames so React flushes the new items before we animate
       requestAnimationFrame(() => requestAnimationFrame(() => {
         if (!trackRef.current) return;
-        const vw = trackRef.current.parentElement?.offsetWidth || 860;
+
+        const vw     = trackRef.current.parentElement?.offsetWidth || 860;
         const center = vw / 2 - 100;
         const target = -(winIdx * (200 + 16) - center);
 
         trackRef.current.style.transition = 'none';
-        trackRef.current.style.transform = 'translateX(0)';
+        trackRef.current.style.transform  = 'translateX(0)';
+
         requestAnimationFrame(() => {
-          trackRef.current.style.transition = 'transform 3800ms cubic-bezier(0.08,1,0.2,1)';
+          if (!trackRef.current) return;
+
+          // CS:GO easing: rockets off fast, then long dramatic deceleration
+          trackRef.current.style.transition =
+            `transform ${duration}ms cubic-bezier(0.03,0.95,0.2,1)`;
           trackRef.current.style.transform = `translateX(${target}px)`;
+
+          // Tick sound loop — fires each time a card crosses the centre marker
+          if (!prefersReducedMotion && audioCtxRef.current) {
+            let lastCardIdx = -1;
+            let lastTickAt  = 0;
+
+            const tickLoop = () => {
+              if (!trackRef.current) return;
+              const tStr = window.getComputedStyle(trackRef.current).transform;
+              const tx   = tStr === 'none' ? 0 : new DOMMatrix(tStr).m41;
+              const cardIdx = Math.round(-tx / CARD_STEP);
+              const now     = performance.now();
+
+              // Throttle: min 30 ms between ticks keeps fast phase as a blur,
+              // slow phase as clear individual clicks
+              if (cardIdx !== lastCardIdx && cardIdx > 0 && now - lastTickAt > 30) {
+                lastCardIdx = cardIdx;
+                lastTickAt  = now;
+                playTick(audioCtxRef.current);
+              }
+              tickRafRef.current = requestAnimationFrame(tickLoop);
+            };
+            tickRafRef.current = requestAnimationFrame(tickLoop);
+          }
         });
       }));
 
       setTimeout(() => {
+        cancelAnimationFrame(tickRafRef.current);
         const reelEl = document.querySelector('.reel-wrap');
         if (reelEl) {
-          const r = reelEl.getBoundingClientRect();
+          const r     = reelEl.getBoundingClientRect();
           const count = winPrize.tier === 'legendary' ? 60 : winPrize.tier === 'epic' ? 44 : 28;
           burst(r.left + r.width / 2, r.top + r.height / 2, TIER_META[winPrize.tier].color, count);
         }
         setPhase('done');
         setTimeout(() => onResult(result), 500);
-      }, 3900);
+      }, duration + 200);
+
     } catch (err) {
+      cancelAnimationFrame(tickRafRef.current);
       setPhase('idle');
       alert(err.message);
     }
@@ -137,11 +214,17 @@ export default function GameScreen({ session, prizes, onResult }) {
 
         {/* Reel Container */}
         <div className="w-full max-w-7xl relative group reel-wrap">
-          {/* Center Indicator */}
-          <div className="absolute left-1/2 top-[-20px] bottom-[-20px] w-0.5 bg-primary z-40 -translate-x-1/2 shadow-[0_0_12px_rgba(224,96,32,0.5)]">
+
+          {/* Centre Indicator — shadow widens while spinning for drama */}
+          <div className={`absolute left-1/2 top-[-20px] bottom-[-20px] w-0.5 bg-primary z-40 -translate-x-1/2 transition-shadow duration-500 ${
+            isSpinning
+              ? 'shadow-[0_0_28px_8px_rgba(224,96,32,0.65)]'
+              : 'shadow-[0_0_12px_rgba(224,96,32,0.5)]'
+          }`}>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45"></div>
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45"></div>
           </div>
+
           {/* Fade edges */}
           <div className="absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-surface to-transparent z-30 pointer-events-none"></div>
           <div className="absolute inset-y-0 right-0 w-48 bg-gradient-to-l from-surface to-transparent z-30 pointer-events-none"></div>

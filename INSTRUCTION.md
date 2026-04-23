@@ -81,15 +81,28 @@ Each phase is documented in detail in a separate file to **save context and toke
 
 ---
 
-## Current State (Phase 1 — as of 2026-04-22)
+## Current State (Phase 1 — as of 2026-04-24)
 
 Phase 1 is **complete and running**. Full monolith stack is live on local `npm run dev`.
 
 ### What's built
-- **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary) and full Admin dashboard (Login, Overview, Prizes, Probability, History).
+- **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary), Leaderboard screen, and full Admin dashboard (Login, Overview, Prizes, Probability, History).
 - **Backend** — Express API with all game + admin endpoints. Server-side weighted random, session management, JWT admin auth.
 - **Database** — MongoDB with Mongoose. Models: User, Session, Prize, AdminUser. Seed script populates defaults.
 - **Docker Compose** — `docker-compose.yml` wires frontend (nginx), backend, and MongoDB.
+
+### Screens & Navigation (App.jsx screen state machine)
+| Screen key | Component | Entry point |
+|---|---|---|
+| `welcome` | `WelcomeScreen` | Default |
+| `leaderboard` | `LeaderboardScreen` | "Leaderboard" nav in WelcomeScreen |
+| `game` | `GameScreen` | After registration |
+| `result` | `ResultScreen` | After each spin |
+| `summary` | `SummaryScreen` | After last spin |
+| `admin-login` | `AdminLogin` | Admin button in header |
+| `admin` | `AdminDashboard` | After admin login |
+
+> No React Router — navigation is a `screen` state string in App.jsx. Adding a new screen = add a case here and pass an `onXxx` callback.
 
 ### Design theme (CEO-approved)
 - **White + Orange** formal theme (overrides original dark "Kinetic Foundry" spec)
@@ -99,9 +112,14 @@ Phase 1 is **complete and running**. Full monolith stack is live on local `npm r
 
 ### Known decisions & constraints
 - `GET /api/game/stats` is a **public** endpoint — returns `participants`, `totalOpens`, `liveDrops`, `inventory`. Same data as admin dashboard but no auth required.
+- `GET /api/game/leaderboard` is a **public** endpoint — returns **all individual drops** sorted by tier (legendary → epic → rare → common), newest-first within each tier. Each record: `{ user, prizeName, tier, time }`. Used by `LeaderboardScreen` which groups by tier and censors names client-side.
 - Stats route must remain **before** `export default router` in `server/src/routes/game.js` (ordering bug fix applied 2026-04-22).
 - Welcome page initial state must include `participants: 0, totalOpens: 0` to prevent undefined → 0 display on load.
 - Prize `imageUrl` is stored as an S3 object URL in MongoDB. Images are uploaded via `POST /api/admin/upload` (multipart) to an S3-compatible bucket; the returned URL is saved with the prize. If no image is uploaded, the reel card shows **no graphic** (only the prize name). Configured via `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` env vars.
+- Player names are **censored** in all public-facing UI (Live Drops + Leaderboard) using `censorName()` from `client/src/lib/utils.js`. Format: keep first 2 chars of each word, replace rest with `x` (e.g. `moss → moxx`, `Alex Chen → Alxx Chxx`).
+- Live Drops in WelcomeScreen shows **exactly 5 entries**, no scroll, inline layout (name left, prize right). Data polls every 30 s.
+- LeaderboardScreen polls every 30 s. Shows rank, censored name, score, legendary count, total opens.
+- **GameScreen spin animation** — CS:GO-style case opening: `5500 ms` duration, `cubic-bezier(0.03,0.95,0.2,1)` easing (rockets off fast, decelerates dramatically). Tick sounds generated via Web Audio API (white-noise burst, 25 ms per tick) through a `requestAnimationFrame` loop that detects card crossings at the centre indicator (card step = 216 px). Ticks throttled to min 30 ms apart — blurs at fast phase, clear clicks at slowdown. Centre indicator shadow widens during spin. Original UI preserved: button text "Spin", "Spinning..." status text. Audio and duration reduced when `prefers-reduced-motion: reduce` is set. AudioContext created on user gesture (button click) to satisfy browser autoplay policy.
 
 ---
 

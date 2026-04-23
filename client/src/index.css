@@ -118,3 +118,19 @@ h1, h2, h3, h4, h5, h6, .font-headline {
 .animate-shake       { animation: shake 300ms ease; }
 .animate-spin-loader { animation: spin 600ms linear infinite; }
 .animate-scan        { animation: scan 1s linear infinite; }
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-screen-in,
+  .animate-result-pop,
+  .animate-float,
+  .animate-pulse-ring,
+  .animate-tier-shine,
+  .animate-shake,
+  .animate-scan {
+    animation: none;
+  }
+  .animate-spin-loader {
+    animation-duration: 1.5s;
+  }
+}

@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { gameApi } from '../lib/api';
 import Spinner from '../components/Spinner';
+import { censorName } from '../lib/utils';
 
 const RANDOM_NAMES = [
   'Alex Chen', 'Sam Rivera', 'Jordan Lee', 'Morgan Kim', 'Casey Park',
   'Taylor Nguyen', 'Riley Wu', 'Drew Patel', 'Kai Tanaka', 'Priya Sharma',
 ];
 
-export default function WelcomeScreen({ onStart, onAdmin }) {
+export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [name, setName] = useState('');
   const [tries, setTries] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -17,12 +18,20 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
 
   useEffect(() => {
     inputRef.current?.focus();
-    gameApi.getStats()
-      .then(setStats)
-      .catch(() => {
-        // Retry once after 1.5 s (handles server-startup race condition)
-        setTimeout(() => gameApi.getStats().then(setStats).catch(() => {}), 1500);
-      });
+
+    const fetchData = () => {
+      gameApi.getStats().then(setStats).catch(() => {});
+    };
+
+    fetchData();
+    // Retry once after 1.5 s (handles server-startup race condition)
+    const retryTimer = setTimeout(fetchData, 1500);
+    const pollInterval = setInterval(fetchData, 30000);
+
+    return () => {
+      clearTimeout(retryTimer);
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const handleGo = async () => {
@@ -43,52 +52,56 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
   };
 
   return (
-    /**
-     * Desktop: locked to 100vh, no scroll.
-     * Mobile:  normal flow, scrollable.
-     * Flex column: header-offset + content + footer share h-screen.
-     */
     <div className="flex flex-col lg:h-screen lg:overflow-hidden bg-background text-on-surface font-body">
 
-      {/* ── Header ── fixed, 64px ── */}
+      {/* ── Skip link ── */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-on-primary focus:text-sm focus:font-semibold">
+        Skip to main content
+      </a>
+
+      {/* ── Header ── fixed, 64 px ── */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/95 backdrop-blur-xl border-b border-outline-variant shadow-sm">
         <div className="max-w-7xl mx-auto h-full px-8 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <span className="text-lg font-black tracking-tight uppercase font-headline">
               <span className="text-primary">Zenith</span> Comp Co.
             </span>
-            <nav className="hidden md:flex gap-6">
-              {[['Cases', true], ['Leaderboard', false]].map(([label, active]) => (
-                <a key={label} href="#" className={`text-xs font-semibold tracking-wide uppercase transition-colors ${active ? 'text-primary border-b-2 border-primary pb-0.5' : 'text-on-surface-variant hover:text-on-surface'
-                  }`}>{label}</a>
-              ))}
+            <nav aria-label="Primary" className="hidden md:flex gap-6">
+              <a href="#" className="text-xs font-semibold tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none text-primary border-b-2 border-primary pb-0.5">
+                Cases
+              </a>
+              <button
+                onClick={onLeaderboard}
+                className="text-xs font-semibold tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none text-on-surface-variant hover:text-on-surface"
+              >
+                Leaderboard
+              </button>
             </nav>
           </div>
           <div className="flex items-center gap-4">
             <span className="hidden xl:block text-[10px] tracking-[0.18em] text-on-surface-variant uppercase">
               Nutanix Cloud Native &amp; AI Innovation Day
             </span>
-            <button onClick={onAdmin} className="text-xs font-semibold tracking-wide uppercase px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors">
+            <button
+              onClick={onAdmin}
+              className="text-xs font-semibold tracking-wide uppercase px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
+            >
               Admin
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── Main ─────────────────────────────────────────────────────────────
-          flex-1 so it fills all space between header offset and footer.
-          On desktop, lg:overflow-hidden prevents the flex child from spilling.
-          pt-16 clears the fixed header. ── */}
-      <main className="flex-1 pt-16 lg:overflow-hidden lg:flex lg:flex-col">
-        {/* Inner container: distribute space into heading / grid / stats */}
+      {/* ── Main ── */}
+      <main id="main-content" className="flex-1 pt-16 lg:overflow-hidden lg:flex lg:flex-col">
         <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-8 py-4 gap-3">
 
-          {/* ── Section 1: Page heading ── compact, fixed size ── */}
+          {/* ── Section 1: Page heading ── */}
           <div className="flex-shrink-0 text-center animate-screen-in">
             <span className="inline-block text-[10px] font-bold tracking-[0.28em] uppercase text-primary mb-2">
               Nutanix Cloud Native &amp; AI Innovation Day
             </span>
-            <h1 className="text-2xl lg:text-3xl font-bold font-headline tracking-tight text-on-surface leading-tight">
+            <h1 className="text-2xl lg:text-3xl font-bold font-headline tracking-tight text-on-surface leading-tight" style={{ textWrap: 'balance' }}>
               Open Your Innovation Case
             </h1>
             <p className="text-sm text-on-surface-variant mt-1">
@@ -96,18 +109,20 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
             </p>
           </div>
 
-          {/* ── Section 2: Two-column grid ── fills all remaining space ── */}
+          {/* ── Section 2: Two-column grid ── */}
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[11fr_9fr] gap-5 animate-screen-in" style={{ animationDelay: '80ms' }}>
 
-            {/* Left — Case image, fills column height */}
+            {/* Left — Case image */}
             <div className="hidden lg:block relative overflow-hidden border border-outline-variant shadow-md">
-              {/* Image uses absolute fill so it takes column height from the grid */}
               <img
-                alt="Zenith Innovation Case"
+                alt="Zenith Innovation Case — a futuristic hardware crate glowing with orange light"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAascBYPGIt_F19CWBhUMOaRrlIRkznAPdvxTNURHzt2ec05MmnwNS8VFWWxYJzdUdcAtx6HaD_C9lq3plgI1OBQncj2LzYOGqAkd16fJIbl1N9xeLh4UC9GsV8ZX8ZOs4TZit03bPgJb2oGIwtFpmRMnOJybEXm_qqOgcTaTUHWv6-k5sW0-HBog8xbIVu2kicJCEs588bJYEKu4Pvj9-RzF7FunIOkoD8ceQEvotKwd4jxURVPhLRRJdaMDqv-AnzJCZtIM1Y79p"
+                width="800"
+                height="600"
+                fetchpriority="high"
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1410]/75 via-[#1A1410]/10 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1410]/75 via-[#1A1410]/10 to-transparent" aria-hidden="true" />
 
               {/* Corner tags */}
               <div className="absolute top-4 left-4 z-10 text-[10px] font-bold text-primary bg-white/90 px-2 py-1 tracking-wider border border-primary/30">
@@ -124,7 +139,7 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
               </div>
             </div>
 
-            {/* Right — Registration form, fills column height with centered content */}
+            {/* Right — Registration form */}
             <div className="flex flex-col bg-white border border-outline-variant shadow-md overflow-y-auto">
               <div className="flex-1 flex flex-col justify-center px-7 py-6">
 
@@ -137,23 +152,28 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
 
                 {/* Name */}
                 <div className="mb-4">
-                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">
+                  <label htmlFor="player-name" className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">
                     Full Name
                   </label>
                   <div className="flex gap-2">
                     <input
+                      id="player-name"
                       ref={inputRef}
                       type="text"
-                      placeholder="e.g. Alex Chen"
+                      name="playerName"
+                      placeholder="e.g. Alex Chen…"
+                      autoComplete="off"
+                      spellCheck="false"
                       value={name}
                       onChange={e => setName(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleGo()}
                       maxLength={40}
-                      className="flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      className="flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
                     />
                     <button
                       onClick={randomize}
-                      className="h-10 px-4 shrink-0 text-xs font-semibold text-on-surface-variant border border-outline-variant bg-surface-container hover:border-primary hover:text-primary transition-colors"
+                      aria-label="Pick a random name"
+                      className="h-10 px-4 shrink-0 text-xs font-semibold text-on-surface-variant border border-outline-variant bg-surface-container hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
                       Random
                     </button>
@@ -165,15 +185,16 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
                   <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">
                     Number of Attempts
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" role="group" aria-label="Select number of attempts">
                     {[1, 2, 3, 4, 5].map(n => (
                       <button
                         key={n}
                         onClick={() => setTries(n)}
-                        className={`flex-1 h-10 font-mono text-sm font-bold transition-all border ${tries === n
+                        aria-pressed={tries === n}
+                        className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
-                          }`}
+                        }`}
                       >
                         {n}
                       </button>
@@ -181,17 +202,21 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
                   </div>
                 </div>
 
-                {error && <p className="text-error text-xs mb-3">{error}</p>}
+                {error && (
+                  <p className="text-error text-xs mb-3" role="alert" aria-live="polite">{error}</p>
+                )}
 
                 {/* CTA */}
                 <button
                   onClick={handleGo}
                   disabled={!name.trim() || loading}
-                  className="group relative w-full h-12 bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 overflow-hidden transition-all hover:bg-primary-fixed active:scale-[0.98] disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:cursor-not-allowed shadow-[0_2px_12px_rgba(224,96,32,0.25)] hover:shadow-[0_4px_20px_rgba(224,96,32,0.4)]"
+                  className="group relative w-full h-12 bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 overflow-hidden transition-colors hover:bg-primary-fixed active:scale-[0.98] disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:cursor-not-allowed shadow-[0_2px_12px_rgba(224,96,32,0.25)] hover:shadow-[0_4px_20px_rgba(224,96,32,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
                   <span className="relative z-10">{loading ? <Spinner /> : 'Unlock Now'}</span>
-                  {!loading && <span className="material-symbols-outlined relative z-10 text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>}
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  {!loading && (
+                    <span className="material-symbols-outlined relative z-10 text-lg" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">bolt</span>
+                  )}
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" aria-hidden="true" />
                 </button>
 
                 <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-widest text-center mt-2">
@@ -201,31 +226,32 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
                 {/* Divider */}
                 <div className="border-t border-outline-variant my-4" />
 
-                {/* Live drops */}
-                <div>
+                {/* Live Drops */}
+                <section aria-label="Live drops feed">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Live Drops</span>
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: '15px' }}>sensors</span>
+                    <span className="material-symbols-outlined text-primary" style={{ fontSize: '15px' }} aria-hidden="true">sensors</span>
                   </div>
                   {stats.liveDrops.length === 0 ? (
                     <p className="text-xs text-on-surface-variant/50 italic">No recent drops yet.</p>
                   ) : (
-                    <div className="space-y-1.5">
-                      {stats.liveDrops.slice(0, 3).map((drop, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-outline-variant/30 last:border-0">
-                          <span className="font-semibold text-on-surface truncate max-w-[48%]">{drop.user}</span>
-                          <span className={`font-medium truncate max-w-[48%] text-right ${drop.tier === 'legendary' ? 'text-primary' : drop.tier === 'epic' ? 'text-purple-600' : 'text-on-surface-variant'
-                            }`}>{drop.name}</span>
-                        </div>
+                    <ul className="space-y-1" aria-live="polite" aria-label="Recent prize drops">
+                      {stats.liveDrops.slice(0, 5).map((drop, idx) => (
+                        <li key={idx} className="flex items-center justify-between text-xs py-1 border-b border-outline-variant/30 last:border-0 gap-2">
+                          <span className="font-semibold text-on-surface truncate min-w-0" translate="no">{censorName(drop.user)}</span>
+                          <span className={`font-medium shrink-0 ${drop.tier === 'legendary' ? 'text-primary' : drop.tier === 'epic' ? 'text-purple-600' : 'text-on-surface-variant'}`}>
+                            {drop.name}
+                          </span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
-                </div>
+                </section>
               </div>
             </div>
           </div>
 
-          {/* ── Section 3: Stats bar ── compact, fixed size ── */}
+          {/* ── Section 3: Stats bar ── */}
           <div className="flex-shrink-0 grid grid-cols-3 gap-4 animate-screen-in" style={{ animationDelay: '160ms' }}>
             {[
               { icon: 'lock_open', value: stats.totalOpens || 0, unit: 'Opens', label: 'Total Opens' },
@@ -233,11 +259,11 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
               { icon: 'group', value: stats.participants || 0, unit: 'users', label: 'Total Participants' },
             ].map(({ icon, value, unit, label }) => (
               <div key={label} className="bg-white border border-outline-variant shadow-sm px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 bg-primary/10 flex items-center justify-center shrink-0" aria-hidden="true">
                   <span className="material-symbols-outlined text-primary text-base">{icon}</span>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-lg font-bold font-headline text-on-surface leading-none">
+                  <div className="text-lg font-bold font-headline text-on-surface leading-none tabular-nums">
                     {value}<span className="text-xs text-primary ml-0.5">{unit}</span>
                   </div>
                   <p className="text-[9px] text-on-surface-variant uppercase tracking-wider mt-0.5 truncate">{label}</p>
@@ -249,15 +275,15 @@ export default function WelcomeScreen({ onStart, onAdmin }) {
         </div>
       </main>
 
-      {/* ── Footer ── slim, always at bottom on desktop ── */}
+      {/* ── Footer ── */}
       <footer className="flex-shrink-0 bg-[#1A1410]">
         <div className="max-w-7xl mx-auto px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
             © 2024 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav className="flex gap-6">
+          <nav aria-label="Footer" className="flex gap-6">
             {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors">
+              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-400">
                 {link}
               </a>
             ))}
