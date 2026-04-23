@@ -5,6 +5,9 @@ const resultSchema = new mongoose.Schema({
   prizeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Prize', required: true },
   prizeName: { type: String, required: true },
   tier: { type: String, enum: ['common', 'rare', 'epic', 'legendary'], required: true },
+  iconKey: { type: String, default: 'consolation' },
+  imageUrl: { type: String, default: '' },
+  description: { type: String, default: '' },
   timestamp: { type: Date, default: Date.now },
 }, { _id: false });
 

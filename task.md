@@ -65,6 +65,37 @@ Status legend: `[ ]` todo | `[~]` in progress | `[x]` done
 - [ ] Error handling: API errors not yet shown as toast/banner — silent `.catch(console.error)` pattern used
 - [ ] Mobile layout: image hidden on mobile (< lg breakpoint) — acceptable for event kiosk use case
 
+### 1.10 Summary Screen Redesign
+- [x] Bug fix: `session.results[i].prizeName` → `r.name` (frontend state stores `name`, not `prizeName`)
+- [x] Server: `gameService.js` now returns `imageUrl` in spin response so it flows into `session.results`
+- [x] Summary screen: viewport-locked (`lg:h-screen lg:overflow-hidden`) matching all other screens
+- [x] Two-column layout (`lg:grid-cols-[2fr_3fr]`): left = best reward hero card (same card style as ResultScreen), right = numbered attempt cards (#1–#5) + CTA
+- [x] Each attempt card: attempt number badge, prize image (56×56, `object-contain`) or `PrizeIcon` fallback, prize name + description, tier badge, "Best" marker on best prize
+- [x] Best reward left-accent strip (tier color) highlights the winning card
+- [x] `focus-visible:ring-*` on CTA button, explicit `width`/`height` + `alt` on all images
+- [x] Removed `Topbar` component dependency — uses standard fixed header matching WelcomeScreen/ResultScreen
+
+### 1.9 Prize Image Upload
+- [x] Add `imageUrl` field (optional String, default `''`) to `Prize` Mongoose schema
+- [x] Pass `imageUrl` through `POST /api/admin/prizes` and `PUT /api/admin/prizes/:id`
+- [x] ~~Admin › Prizes form: file input (image/*) → base64 via FileReader → stored as `imageUrl`~~ (replaced by S3 upload — see 1.11)
+- [x] Admin › Prizes form: image preview (64×64, `object-contain`) + Remove button when image is set
+- [x] Spin reel `ReelCard`: if `prize.imageUrl` exists → show `<img>` (120×120, `object-contain`); if absent → no graphic rendered
+- [x] Follows web-design-guidelines: labelled file input, `aria-label` on remove button, explicit `width`/`height` on all images, `focus-visible` ring on interactive elements
+- [x] Result screen: show `prize.imageUrl` (240×240, `object-contain`) when set; if absent → no graphic (text-only, consistent with ReelCard behaviour). Removed hardcoded Google image URL and Material icon.
+- [x] Result screen: redesigned to viewport-lock at 1920×1080 (`lg:h-screen lg:overflow-hidden`) matching WelcomeScreen pattern. Two-column layout: left = prize card (fills column height), right = congratulations heading + tier badge + prize name + CTA. Added `focus-visible:ring-*` on CTA button. Footer matches WelcomeScreen slim style.
+
+### 1.11 S3 Image Storage
+- [x] Replaced base64-in-JSON upload with S3 multipart upload (fixes `Unexpected token '<'` JSON parse error caused by nginx 1MB body limit)
+- [x] Install `@aws-sdk/client-s3` + `multer` on server
+- [x] `server/src/services/s3.js` — S3Client singleton, `uploadToS3(buffer, filename, mimetype)` returns public URL. Supports custom endpoint (MinIO/path-style) or AWS (virtual-hosted style)
+- [x] `POST /api/admin/upload` — protected by JWT, accepts `multipart/form-data` image (max 10 MB), uploads to S3, returns `{ url }`
+- [x] `Prize.imageUrl` in MongoDB now stores the S3 object URL (string) instead of base64 data URL
+- [x] Admin › Prizes form: file selected → `uploadImage()` hits `/api/admin/upload` → stores returned URL in form state → saved to MongoDB with prize
+- [x] Upload button shows "Uploading…" state; Save Prize disabled while upload is in progress
+- [x] Nginx `client_max_body_size 10m` added to `/api/` proxy block (prevents 413 for large uploads)
+- [x] `.env.example` + `.env.prod.example` updated with `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`
+
 ---
 
 ## Phase 2: Docker Compose (Frontend + Backend + DB)

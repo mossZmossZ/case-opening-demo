@@ -22,9 +22,15 @@ function ReelCard({ prize }) {
 
   return (
     <div className={`shrink-0 w-[200px] aspect-square bg-white border border-outline-variant ${rarityClass} flex flex-col items-center justify-center p-4 transition-colors shadow-sm`}>
-      <span className="material-symbols-outlined text-5xl mb-4 text-on-surface-variant" style={{ color: prize.tier === 'legendary' ? c : undefined }}>
-        {prize.iconKey || 'token'}
-      </span>
+      {prize.imageUrl ? (
+        <img
+          src={prize.imageUrl}
+          alt={prize.name}
+          width={120}
+          height={120}
+          className="w-[120px] h-[120px] object-contain mb-3"
+        />
+      ) : null}
       <span className="font-body font-bold uppercase text-xs tracking-wide text-center text-on-surface" style={{ color: prize.tier === 'legendary' ? c : undefined }}>
         {prize.name}
       </span>

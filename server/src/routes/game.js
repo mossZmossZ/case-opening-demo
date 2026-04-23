@@ -10,7 +10,7 @@ const router = Router();
 router.get('/prizes', async (req, res) => {
   try {
     const prizes = await Prize.find({ active: true, remainingStock: { $gt: 0 } })
-      .select('name description tier iconKey weight');
+      .select('name description tier iconKey imageUrl weight');
     res.json(prizes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -66,6 +66,9 @@ router.post('/spin/:sessionId', async (req, res) => {
       prizeId: prize.prizeId,
       prizeName: prize.name,
       tier: prize.tier,
+      iconKey: prize.iconKey,
+      imageUrl: prize.imageUrl,
+      description: prize.description,
     });
 
     const attemptsLeft = session.totalAttempts - session.results.length;

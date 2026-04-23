@@ -1,11 +1,24 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
 import AdminUser from '../models/AdminUser.js';
 import Prize from '../models/Prize.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { uploadToS3 } from '../services/s3.js';
+
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_IMAGE_TYPES.has(file.mimetype)) cb(null, true);
+    else cb(Object.assign(new Error('Only image files are allowed'), { status: 400 }));
+  },
+});
 
 const router = Router();
 
@@ -36,6 +49,23 @@ router.post('/login', async (req, res) => {
 
 // All routes below require admin JWT
 router.use(requireAdmin);
+
+// POST /api/admin/upload — upload prize image to S3, return URL
+router.post('/upload', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Image must be under 10 MB' });
+    if (err) return res.status(err.status || 400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const url = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/admin/dashboard
 router.get('/dashboard', async (req, res) => {
@@ -98,7 +128,7 @@ router.get('/prizes', async (req, res) => {
 // POST /api/admin/prizes
 router.post('/prizes', async (req, res) => {
   try {
-    const { name, description, tier, weight, totalStock, iconKey } = req.body;
+    const { name, description, tier, weight, totalStock, iconKey, imageUrl } = req.body;
     if (!name || !tier || weight == null || totalStock == null) {
       return res.status(400).json({ error: 'name, tier, weight, and totalStock are required' });
     }
@@ -111,6 +141,7 @@ router.post('/prizes', async (req, res) => {
       totalStock: Number(totalStock),
       remainingStock: Number(totalStock),
       iconKey: iconKey || 'consolation',
+      imageUrl: imageUrl || '',
     });
     res.status(201).json(prize);
   } catch (err) {
@@ -121,7 +152,7 @@ router.post('/prizes', async (req, res) => {
 // PUT /api/admin/prizes/:id
 router.put('/prizes/:id', async (req, res) => {
   try {
-    const { name, description, tier, weight, totalStock, remainingStock, iconKey, active } = req.body;
+    const { name, description, tier, weight, totalStock, remainingStock, iconKey, imageUrl, active } = req.body;
     const updates = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
@@ -130,6 +161,7 @@ router.put('/prizes/:id', async (req, res) => {
     if (totalStock !== undefined) updates.totalStock = Number(totalStock);
     if (remainingStock !== undefined) updates.remainingStock = Number(remainingStock);
     if (iconKey !== undefined) updates.iconKey = iconKey;
+    if (imageUrl !== undefined) updates.imageUrl = imageUrl;
     if (active !== undefined) updates.active = active;
 
     const prize = await Prize.findByIdAndUpdate(req.params.id, updates, { new: true });
