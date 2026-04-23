@@ -4,3 +4,4 @@ dist/
 *.log
 /stich_case_opening_demo
 /.claude
+/.agents

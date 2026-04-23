@@ -1,4 +1,27 @@
 const BASE = '/api';
+const PRIZE_DATA_UPDATED_KEY = 'zenith:prize-data-updated';
+
+export function notifyPrizeDataChanged() {
+  try {
+    localStorage.setItem(PRIZE_DATA_UPDATED_KEY, String(Date.now()));
+  } catch {
+    // Cross-tab sync is best effort only.
+  }
+  window.dispatchEvent(new Event(PRIZE_DATA_UPDATED_KEY));
+}
+
+export function subscribePrizeDataChanged(callback) {
+  const onStorage = (event) => {
+    if (event.key === PRIZE_DATA_UPDATED_KEY) callback();
+  };
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(PRIZE_DATA_UPDATED_KEY, callback);
+
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(PRIZE_DATA_UPDATED_KEY, callback);
+  };
+}
 
 // Compress and resize an image file before upload.
 // Resizes to fit within maxPx on the longest side, converts to WebP.

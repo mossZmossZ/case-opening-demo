@@ -98,7 +98,7 @@ function ReelCard({ prize }) {
   );
 }
 
-export default function GameScreen({ session, prizes, onResult, onRefreshPrizes }) {
+export default function GameScreen({ session, prizes, onResult, onRefreshPrizes, onBackHome }) {
   const [phase, setPhase]         = useState('idle');
   const [reelItems, setReelItems] = useState([]);
   const [stats, setStats]         = useState({ liveDrops: [] });
@@ -259,6 +259,14 @@ export default function GameScreen({ session, prizes, onResult, onRefreshPrizes 
               <h2 className="font-headline text-2xl font-bold text-on-surface tracking-tight">All Prizes Claimed</h2>
               <p className="mt-2 text-sm text-on-surface-variant uppercase tracking-widest">The prize pool is currently empty. Check back soon.</p>
             </div>
+            <button
+              type="button"
+              onClick={onBackHome}
+              className="flex items-center gap-2 px-6 h-11 bg-primary text-on-primary text-sm font-bold uppercase tracking-wide hover:bg-primary-fixed transition-colors shadow-[0_2px_12px_rgba(224,96,32,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">home</span>
+              Back to Home
+            </button>
           </div>
         ) : (
           /* ── Reel Container ── */

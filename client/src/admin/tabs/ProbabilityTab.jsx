@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminApi } from '../../lib/api';
+import { adminApi, notifyPrizeDataChanged } from '../../lib/api';
 import { TIER_META } from '../../lib/constants';
 
 export default function ProbabilityTab({ token, prizes, onRefresh }) {
@@ -25,6 +25,7 @@ export default function ProbabilityTab({ token, prizes, onRefresh }) {
     try {
       await adminApi.updateRates(token, { rates: rates.map(r => ({ id: r.id, weight: r.weight })) });
       await onRefresh();
+      notifyPrizeDataChanged();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {

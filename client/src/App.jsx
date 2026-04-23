@@ -6,6 +6,7 @@ import SummaryScreen from './screens/SummaryScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminLogin from './admin/AdminLogin';
 import AdminDashboard from './admin/AdminDashboard';
+import { subscribePrizeDataChanged } from './lib/api';
 
 export default function App() {
   const [screen, setScreen] = useState('welcome');
@@ -27,6 +28,25 @@ export default function App() {
   }, []);
 
   useEffect(() => { loadPrizes(); }, [loadPrizes]);
+  useEffect(() => subscribePrizeDataChanged(loadPrizes), [loadPrizes]);
+
+  useEffect(() => {
+    if (!['welcome', 'game', 'result', 'summary'].includes(screen)) return undefined;
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') loadPrizes();
+    };
+
+    const interval = setInterval(loadPrizes, 10000);
+    window.addEventListener('focus', loadPrizes);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', loadPrizes);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [screen, loadPrizes]);
 
   // User flow handlers
   const handleStart = useCallback((sessionData) => {
@@ -96,6 +116,7 @@ export default function App() {
           prizes={prizes}
           onResult={handleResult}
           onRefreshPrizes={loadPrizes}
+          onBackHome={handlePlayAgain}
         />
       )}
 

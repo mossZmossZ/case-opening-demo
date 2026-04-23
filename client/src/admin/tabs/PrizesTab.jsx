@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { adminApi } from '../../lib/api';
+import { adminApi, notifyPrizeDataChanged } from '../../lib/api';
 import { TIER_META } from '../../lib/constants';
 import PrizeIcon from '../../components/PrizeIcon';
 
@@ -73,6 +73,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
       else await adminApi.updatePrize(token, editing, form);
       setEditing(null);
       await onRefresh();
+      notifyPrizeDataChanged();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -85,6 +86,7 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
     try {
       await adminApi.deletePrize(token, id);
       await onRefresh();
+      notifyPrizeDataChanged();
     } catch (err) {
       alert(err.message);
     }

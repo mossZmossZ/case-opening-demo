@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { gameApi } from '../lib/api';
+import { gameApi, subscribePrizeDataChanged } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { censorName } from '../lib/utils';
 
@@ -48,10 +48,12 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
     // Retry once after 1.5 s (handles server-startup race condition)
     const retryTimer = setTimeout(fetchData, 1500);
     const pollInterval = setInterval(fetchData, 30000);
+    const unsubscribePrizeData = subscribePrizeDataChanged(fetchData);
 
     return () => {
       clearTimeout(retryTimer);
       clearInterval(pollInterval);
+      unsubscribePrizeData();
     };
   }, []);
 
