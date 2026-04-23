@@ -30,6 +30,8 @@ export async function uploadToS3(buffer, filename, mimetype) {
     Key: key,
     Body: buffer,
     ContentType: mimetype,
+    ACL: 'public-read',
+    CacheControl: 'public, max-age=31536000, immutable',
   }));
 
   if (process.env.S3_ENDPOINT) {

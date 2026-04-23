@@ -9,7 +9,16 @@ import User from '../models/User.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { uploadToS3 } from '../services/s3.js';
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_IMAGE_TYPES.has(file.mimetype)) cb(null, true);
+    else cb(Object.assign(new Error('Only image files are allowed'), { status: 400 }));
+  },
+});
 
 const router = Router();
 
@@ -42,7 +51,13 @@ router.post('/login', async (req, res) => {
 router.use(requireAdmin);
 
 // POST /api/admin/upload — upload prize image to S3, return URL
-router.post('/upload', upload.single('image'), async (req, res) => {
+router.post('/upload', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Image must be under 10 MB' });
+    if (err) return res.status(err.status || 400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const url = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);

@@ -11,7 +11,13 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+// Skip JSON body parsing for multipart uploads — multer handles those directly.
+// express.json() calling getRawBody() on a large multipart stream causes PayloadTooLargeError
+// before multer even gets a chance to run.
+app.use((req, res, next) => {
+  if ((req.headers['content-type'] || '').startsWith('multipart/')) return next();
+  express.json({ limit: '1mb' })(req, res, next);
+});
 
 // Health check
 app.get('/api/health', async (req, res) => {

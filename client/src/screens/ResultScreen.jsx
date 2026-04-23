@@ -1,5 +1,6 @@
 import React from 'react';
 import { TIER_META } from '../lib/constants';
+import PrizeIcon from '../components/PrizeIcon';
 
 export default function ResultScreen({ prize, attemptsLeft, onContinue }) {
   const m = TIER_META[prize.tier];
@@ -60,7 +61,11 @@ export default function ResultScreen({ prize, attemptsLeft, onContinue }) {
                     height={280}
                     className="w-[280px] h-[280px] object-contain relative z-10"
                   />
-                ) : null}
+                ) : (
+                  <div className="relative z-10">
+                    <PrizeIcon iconKey={prize.iconKey || 'consolation'} tier={prize.tier} size={140} />
+                  </div>
+                )}
 
                 {/* Corner accents */}
                 <div className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none">
