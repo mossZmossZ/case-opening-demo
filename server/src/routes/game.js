@@ -157,4 +157,40 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET /api/game/leaderboard — all drops sorted by tier (legendary first, newest first within tier)
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const drops = await Session.aggregate([
+      { $unwind: '$results' },
+      {
+        $addFields: {
+          tierOrder: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$results.tier', 'legendary'] }, then: 1 },
+                { case: { $eq: ['$results.tier', 'epic'] },      then: 2 },
+                { case: { $eq: ['$results.tier', 'rare'] },      then: 3 },
+              ],
+              default: 4,
+            },
+          },
+        },
+      },
+      { $sort: { tierOrder: 1, 'results.timestamp': -1 } },
+      {
+        $project: {
+          _id: 0,
+          user: '$playerName',
+          prizeName: '$results.prizeName',
+          tier: '$results.tier',
+          time: '$results.timestamp',
+        },
+      },
+    ]);
+    res.json(drops);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

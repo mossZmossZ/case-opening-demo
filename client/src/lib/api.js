@@ -56,6 +56,8 @@ export const gameApi = {
     request(`/game/session/${sessionId}`),
   getStats: () =>
     request('/game/stats'),
+  getLeaderboard: () =>
+    request('/game/leaderboard'),
 };
 
 // Admin API

@@ -63,3 +63,29 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## 5. Project-Specific Rules (Zenith Case Opening Demo)
+
+### Navigation
+- Navigation is a `screen` state string in `App.jsx` — **no React Router**. Adding a screen = add a `screen === 'xxx'` case and pass an `onXxx` callback prop. Never install a routing library without CEO approval.
+
+### Public Name Display
+- All player names shown in public UI (Live Drops, Leaderboard) **must** be passed through `censorName()` from `client/src/lib/utils.js`. Never display raw names outside admin-only views.
+
+### API Endpoints
+- Ask CEO before adding any new public (`/api/game/*`) or admin (`/api/admin/*`) endpoints.
+- New game routes go in `server/src/routes/game.js` **before** `export default router`.
+
+### UI Standards
+- All interactive elements must have visible `focus-visible:ring-*` states — never `outline-none` without a replacement.
+- Decorative Material Symbols icons must have `aria-hidden="true"`.
+- Use web-design-guidelines skill (`/web-design-guidelines`) when building or modifying screens.
+
+### Ask CEO Before
+- Changing DB schema (models in `server/src/models/`)
+- Adding npm dependencies
+- Modifying user flow order (Welcome → Game → Result → Summary)
+- Changing deployment config (Docker Compose, nginx, env vars)
+- Altering admin auth logic

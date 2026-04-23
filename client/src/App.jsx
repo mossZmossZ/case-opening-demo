@@ -3,6 +3,7 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
 import SummaryScreen from './screens/SummaryScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminLogin from './admin/AdminLogin';
 import AdminDashboard from './admin/AdminDashboard';
 
@@ -75,6 +76,14 @@ export default function App() {
       {screen === 'welcome' && (
         <WelcomeScreen
           onStart={handleStart}
+          onAdmin={() => setScreen('admin-login')}
+          onLeaderboard={() => setScreen('leaderboard')}
+        />
+      )}
+
+      {screen === 'leaderboard' && (
+        <LeaderboardScreen
+          onBack={() => setScreen('welcome')}
           onAdmin={() => setScreen('admin-login')}
         />
       )}
