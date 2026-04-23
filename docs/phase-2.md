@@ -74,8 +74,13 @@ volumes:
 - `GET /api/health` → `{ status: "ok", db: "connected" }`
 
 ## Done When
-- [ ] `docker compose up --build` starts all 3 services
-- [ ] App accessible at `http://localhost:3000`
-- [ ] API proxied correctly through nginx
-- [ ] MongoDB data persists across restarts (volume)
-- [ ] Dev mode: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` with hot reload
+- [x] `docker compose up --build` starts all 3 services
+- [x] App accessible at `http://localhost:8080` (port adjusted to 8080 in final impl)
+- [x] API proxied correctly through nginx (`/api/` → `backend:4000`)
+- [x] MongoDB data persists across restarts (volume)
+- [x] CI/CD: GitHub Actions builds + pushes images to Docker Hub on `main`
+- [x] `docker-compose-prod.yml` — pulls from Docker Hub, MongoDB not exposed externally
+- [x] External reverse proxy handles SSL termination (not in compose)
+
+## Notes
+- Dev hot-reload compose (`docker-compose.dev.yml`) was not implemented — local dev uses `npm run dev` monolith (Phase 1 flow) instead.

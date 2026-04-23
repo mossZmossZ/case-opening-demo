@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TIER_META } from '../lib/constants';
 import PrizeIcon from '../components/PrizeIcon';
 
 export default function ResultScreen({ prize, attemptsLeft, onContinue }) {
+  useEffect(() => { document.title = `${prize.name} — Zenith Comp Co.`; }, [prize.name]);
+
   const m = TIER_META[prize.tier];
 
   let badgeColor = 'bg-surface-container-highest text-on-surface';
@@ -159,7 +161,7 @@ export default function ResultScreen({ prize, attemptsLeft, onContinue }) {
       <footer className="flex-shrink-0 bg-[#1A1410]">
         <div className="max-w-7xl mx-auto px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
           <p className="font-body text-[10px] uppercase tracking-widest text-neutral-500">
-            © 2024 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
+            © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
           <nav className="flex gap-6">
             {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (

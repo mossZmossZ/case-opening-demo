@@ -3,10 +3,29 @@ import { gameApi } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { censorName } from '../lib/utils';
 
-const RANDOM_NAMES = [
-  'Alex Chen', 'Sam Rivera', 'Jordan Lee', 'Morgan Kim', 'Casey Park',
-  'Taylor Nguyen', 'Riley Wu', 'Drew Patel', 'Kai Tanaka', 'Priya Sharma',
+const ADJ = [
+  'Silent', 'Shadow', 'Golden', 'Neon', 'Arctic', 'Crimson', 'Phantom',
+  'Cosmic', 'Iron', 'Storm', 'Frost', 'Blazing', 'Hollow', 'Swift',
+  'Dark', 'Rogue', 'Hyper', 'Lunar', 'Toxic', 'Stealth',
 ];
+const NOUN = [
+  'Wolf', 'Eagle', 'Dragon', 'Sniper', 'Phoenix', 'Viper', 'Titan',
+  'Ghost', 'Hawk', 'Blade', 'Raven', 'Ninja', 'Ranger', 'Specter',
+  'Fox', 'Cobra', 'Reaper', 'Knight', 'Demon', 'Striker',
+];
+
+let _lastName = '';
+const generateRandomName = () => {
+  let name;
+  do {
+    const adj  = ADJ[Math.floor(Math.random() * ADJ.length)];
+    const noun = NOUN[Math.floor(Math.random() * NOUN.length)];
+    const num  = Math.random() < 0.5 ? Math.floor(Math.random() * 999) + 1 : '';
+    name = `${adj}${noun}${num}`;
+  } while (name === _lastName);
+  _lastName = name;
+  return name;
+};
 
 export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [name, setName] = useState('');
@@ -15,6 +34,8 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ liveDrops: [], participants: 0, totalOpens: 0, inventory: { remainingCases: 0, legendaryDropRate: 0 } });
   const inputRef = useRef();
+
+  useEffect(() => { document.title = 'Zenith Comp Co. — Case Opening'; }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -48,7 +69,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   };
 
   const randomize = () => {
-    setName(RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)]);
+    setName(generateRandomName());
   };
 
   return (
@@ -279,7 +300,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
       <footer className="flex-shrink-0 bg-[#1A1410]">
         <div className="max-w-7xl mx-auto px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
-            © 2024 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
+            © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
           <nav aria-label="Footer" className="flex gap-6">
             {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (

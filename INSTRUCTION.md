@@ -81,9 +81,19 @@ Each phase is documented in detail in a separate file to **save context and toke
 
 ---
 
-## Current State (Phase 1 — as of 2026-04-24)
+## Current State (Phase 2 — as of 2026-04-24)
 
-Phase 1 is **complete and running**. Full monolith stack is live on local `npm run dev`.
+Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is containerized and deployed via Docker Compose.
+
+### Phase 2 — What's built
+- **client/Dockerfile** — Multi-stage build: React/Vite → nginx serves static assets.
+- **server/Dockerfile** — Node.js production image (`npm ci --production`).
+- **docker-compose.yml** (dev/local build) — Builds images locally; MongoDB port exposed for local dev.
+- **docker-compose-prod.yml** — Pulls images from Docker Hub; MongoDB not exposed externally (`expose` only).
+- **No reverse proxy in compose** — An external proxy (outside Docker) terminates SSL and routes traffic to the containers. Point it at:
+  - `host:8080` → frontend (React SPA via nginx)
+  - `host:4000` → backend API
+- **CI/CD** — GitHub Actions builds and pushes `client` + `server` images to Docker Hub on push to `main`.
 
 ### What's built
 - **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary), Leaderboard screen, and full Admin dashboard (Login, Overview, Prizes, Probability, History).

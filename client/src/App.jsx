@@ -43,8 +43,9 @@ export default function App() {
       ...prev,
       results: [...(prev.results || []), result.prize],
     }));
+    loadPrizes(); // refresh prize inventory after every spin
     setScreen('result');
-  }, []);
+  }, [loadPrizes]);
 
   const handleContinue = useCallback(() => {
     if (lastResult.attemptsLeft <= 0) {
@@ -94,6 +95,7 @@ export default function App() {
           session={session}
           prizes={prizes}
           onResult={handleResult}
+          onRefreshPrizes={loadPrizes}
         />
       )}
 
