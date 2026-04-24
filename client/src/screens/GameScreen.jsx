@@ -238,17 +238,17 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
     <div className="bg-surface text-on-surface font-body selection:bg-primary/20 selection:text-on-surface overflow-x-hidden min-h-screen flex flex-col">
 
       {/* ── Header ── */}
-      <header className="fixed top-0 w-full flex items-center justify-between px-8 py-4 bg-white/95 backdrop-blur-xl z-50 border-b border-outline-variant shadow-sm">
-        <div className="text-xl font-black tracking-tight text-on-surface uppercase font-headline">
+      <header className="fixed top-0 w-full flex items-center justify-between px-4 sm:px-8 py-4 bg-white/95 backdrop-blur-xl z-50 border-b border-outline-variant shadow-sm">
+        <div className="text-base sm:text-xl font-black tracking-tight text-on-surface uppercase font-headline shrink-0">
           <span className="text-primary">Zenith</span> Comp Co.
         </div>
         <nav className="hidden md:flex items-center gap-8 font-body tracking-wide uppercase text-xs">
           <a className="text-primary border-b-2 border-primary pb-1 font-bold" href="#">Cases</a>
         </nav>
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-xs uppercase text-on-surface-variant mr-4">{session.playerName}</span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="font-mono text-xs uppercase text-on-surface-variant mr-2 sm:mr-4 truncate max-w-[80px] sm:max-w-[180px]">{session.playerName}</span>
           <div
-            className="flex gap-1.5"
+            className="flex gap-1 sm:gap-1.5 shrink-0"
             aria-label={`${attemptsUsed} of ${session.totalAttempts} spins used`}
           >
             {Array.from({ length: session.totalAttempts }).map((_, i) => (
@@ -264,7 +264,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
         </div>
       </header>
 
-      <main className="pt-32 pb-24 px-4 md:px-12 flex-grow flex flex-col items-center justify-center relative overflow-hidden animate-screen-in">
+      <main className="pt-20 sm:pt-32 pb-16 sm:pb-24 px-4 md:px-12 flex-grow flex flex-col items-center justify-center relative overflow-hidden animate-screen-in">
         {/* Ambient glow */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/6 blur-[140px] rounded-full -z-10"
@@ -272,13 +272,13 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
         />
 
         {/* Case Header */}
-        <div className="w-full max-w-6xl mb-12 flex justify-between items-end border-b border-outline-variant pb-6">
+        <div className="w-full max-w-6xl mb-4 sm:mb-12 flex justify-between items-end border-b border-outline-variant pb-3 sm:pb-6">
           <div>
-            <p className="text-on-surface-variant font-body uppercase tracking-[0.2em] text-xs mb-2">
+            <p className="text-on-surface-variant font-body uppercase tracking-[0.2em] text-xs mb-1 sm:mb-2">
               Operation: Cloud Native
             </p>
             <h1
-              className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-on-surface"
+              className="text-2xl sm:text-4xl md:text-5xl font-bold font-headline tracking-tight text-on-surface"
               style={{ textWrap: 'balance' }}
             >
               Innovation Case
@@ -456,7 +456,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
         )}
 
         {/* ── Interaction Zone ── */}
-        <div className="mt-10 flex flex-col items-center gap-4">
+        <div className="mt-6 sm:mt-10 flex flex-col items-center gap-4">
           {isSpinning ? (
             <div className="text-center" aria-live="polite" aria-label="Spinning, please wait">
               <span className="font-body text-primary text-lg font-bold uppercase tracking-[0.3em]">
@@ -520,7 +520,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
       </main>
 
       {/* ── Footer ── */}
-      <footer className="w-full py-6 px-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-[#1A1410] mt-auto">
+      <footer className="w-full py-4 sm:py-6 px-4 sm:px-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-[#1A1410] mt-auto">
         <div className="font-body text-xs uppercase tracking-widest text-neutral-400">
           © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
         </div>

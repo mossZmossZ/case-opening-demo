@@ -128,6 +128,21 @@ Phase 1 is **complete**. Phase 2 is **complete and running**. Phase 3 is in **pl
 - Welcome page: viewport-locked (`lg:h-screen`), no scroll on 1920×1080. Layout: compact heading → image + form side-by-side → stats bar → footer.
 - All pages: white surfaces, `#E06020` orange primary, charcoal `#1A1410` footer.
 
+### Responsive / Mobile design (2026-04-24)
+All user-facing screens are designed mobile-first. Key decisions:
+- **Header padding**: `px-4 sm:px-8` on all screens (was `px-8` which was cramped on 375 px phones).
+- **WelcomeScreen mobile nav**: Desktop nav (`hidden md:flex`) has "Cases" + "Leaderboard". On mobile a compact icon-button (`md:hidden`) exposes the Leaderboard route since the desktop nav is hidden. Admin button is always visible.
+- **Stats bar (WelcomeScreen)**: Icons hidden on mobile (`hidden sm:flex`); font sizes scale down (`text-base sm:text-lg`); gap reduces (`gap-2 sm:gap-4`).
+- **Registration form**: `px-4 sm:px-7 py-4 sm:py-6` — tighter on mobile, relaxed on desktop.
+- **GameScreen top padding**: `pt-20 sm:pt-32` (was fixed `pt-32` = 128 px, far too much on mobile given a ~64 px header).
+- **GameScreen case title**: `text-2xl sm:text-4xl md:text-5xl` — scales from mobile through desktop.
+- **GameScreen player name in header**: `truncate max-w-[80px] sm:max-w-[180px]` prevents long names from overflowing the fixed header.
+- **LeaderboardScreen table**: "Time" column is `hidden sm:block` on mobile. Grid collapses from `[1fr_1fr_64px]` to `[1fr_1fr]`. Row padding reduces to `px-3 sm:px-5`.
+- **SummaryScreen best card**: `min-h-[260px] sm:min-h-[360px]` saves vertical space on mobile.
+- **Global touch behaviour** (`index.css`): `touch-action: manipulation` and `-webkit-tap-highlight-color: transparent` applied to all `button` and `a` elements — eliminates 300 ms tap delay and removes default blue highlight on iOS/Android.
+- **Reel cards** in GameScreen remain fixed at 200 px width — this is intrinsic to the spin animation math (`CARD_W`, `CARD_STEP`). The reel overflows and clips horizontally, which is intentional (slot-machine look). Do **not** change `CARD_W` without also updating the animation constants.
+- **Admin UI**: No mobile-specific changes made (admin is staff-only, desktop usage assumed). Low priority per CEO.
+
 ### Known decisions & constraints
 - `GET /api/game/stats` is a **public** endpoint — returns `participants`, `totalOpens`, `liveDrops`, `inventory`. Same data as admin dashboard but no auth required.
 - `GET /api/game/leaderboard` is a **public** endpoint — returns **all individual drops** sorted by tier (legendary → epic → rare → common), newest-first within each tier. Each record: `{ user, prizeName, tier, time }`. Used by `LeaderboardScreen` which groups by tier and censors names client-side.
