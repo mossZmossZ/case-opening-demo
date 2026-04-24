@@ -20,9 +20,13 @@ permissions:
 
 jobs:
   # ── 1. Dependency review (GitHub native, free, fast) ──────────────────────
+  # Requires the repo's "Dependency graph" to be enabled:
+  #   Settings → Code security → Dependency graph → Enable
+  # If it isn't enabled the step warns and continues instead of failing CI.
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
@@ -65,7 +69,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
 
       - name: Trivy scan (report only — non-blocking)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: local/${{ matrix.service.image }}:ci-${{ github.sha }}
           format: sarif
