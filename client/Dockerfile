@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install deps first (cache layer — only re-runs when package.json changes)
-COPY package.json .
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy source and build
 COPY . .
