@@ -118,4 +118,10 @@ export const adminApi = {
     request('/admin/rates', { token, body: rates, method: 'PUT' }),
   getHistory: (token, page = 1, limit = 20) =>
     request(`/admin/history?page=${page}&limit=${limit}`, { token }),
+  resetSessions: (token) =>
+    request('/admin/operations/reset-sessions', { token, body: {} }),
+  resetStock: (token) =>
+    request('/admin/operations/reset-stock', { token, body: {} }),
+  generateDummy: (token) =>
+    request('/admin/operations/generate-dummy', { token, body: {} }),
 };

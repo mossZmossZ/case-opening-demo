@@ -4,12 +4,14 @@ import OverviewTab from './tabs/OverviewTab';
 import PrizesTab from './tabs/PrizesTab';
 import ProbabilityTab from './tabs/ProbabilityTab';
 import HistoryTab from './tabs/HistoryTab';
+import OperationsTab from './tabs/OperationsTab';
 
 const NAV = [
-  { id: 'overview',    label: 'Overview',   icon: 'dashboard'   },
-  { id: 'prizes',      label: 'Prizes',     icon: 'inventory_2' },
-  { id: 'probability', label: 'Drop Rates', icon: 'tune'        },
-  { id: 'history',     label: 'History',    icon: 'history'     },
+  { id: 'overview',    label: 'Overview',    icon: 'dashboard'      },
+  { id: 'prizes',      label: 'Prizes',      icon: 'inventory_2'    },
+  { id: 'probability', label: 'Drop Rates',  icon: 'tune'           },
+  { id: 'history',     label: 'History',     icon: 'history'        },
+  { id: 'operations',  label: 'Operations',  icon: 'admin_panel_settings' },
 ];
 
 export default function AdminDashboard({ token, onLogout }) {
@@ -125,6 +127,7 @@ export default function AdminDashboard({ token, onLogout }) {
               {tab === 'prizes'      && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
               {tab === 'probability' && <ProbabilityTab token={token} prizes={prizes} onRefresh={refresh} />}
               {tab === 'history'     && <HistoryTab token={token} />}
+              {tab === 'operations'  && <OperationsTab token={token} onRefresh={refresh} />}
             </div>
           )}
         </main>

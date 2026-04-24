@@ -92,8 +92,28 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
     }
   };
 
+  // Low stock = remaining < 10% of total; out of stock = 0
+  const lowStockPrizes  = prizes.filter(p => p.totalStock > 0 && p.remainingStock > 0 && p.remainingStock / p.totalStock < 0.1);
+  const emptyPrizes     = prizes.filter(p => p.remainingStock === 0 && p.active);
+
   return (
     <div className="space-y-5">
+
+      {/* ── Low stock warning banner ── */}
+      {(lowStockPrizes.length > 0 || emptyPrizes.length > 0) && (
+        <div className="border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
+          <span className="material-symbols-outlined text-amber-500 text-lg flex-shrink-0 mt-0.5" aria-hidden="true" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+          <div className="text-xs text-amber-800 space-y-0.5">
+            {emptyPrizes.length > 0 && (
+              <p><strong>Out of stock:</strong> {emptyPrizes.map(p => p.name).join(', ')}</p>
+            )}
+            {lowStockPrizes.length > 0 && (
+              <p><strong>Low stock (&lt;10%):</strong> {lowStockPrizes.map(p => `${p.name} (${p.remainingStock} left)`).join(', ')}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-on-surface-variant">{prizes.length} prize{prizes.length !== 1 ? 's' : ''} configured</p>
         <button
@@ -300,6 +320,12 @@ export default function PrizesTab({ token, prizes, onRefresh }) {
                   </button>
                   {!p.active && (
                     <span className="shrink-0 text-[9px] font-bold text-error border border-error/30 px-1.5 py-0.5 uppercase tracking-wide">Off</span>
+                  )}
+                  {p.active && p.remainingStock === 0 && (
+                    <span className="shrink-0 text-[9px] font-bold text-white bg-red-500 px-1.5 py-0.5 uppercase tracking-wide">Empty</span>
+                  )}
+                  {p.active && p.remainingStock > 0 && p.totalStock > 0 && p.remainingStock / p.totalStock < 0.1 && (
+                    <span className="shrink-0 text-[9px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-1.5 py-0.5 uppercase tracking-wide">Low</span>
                   )}
                 </div>
                 {/* Tier */}
