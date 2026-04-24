@@ -70,9 +70,6 @@ export default function AdminLogin({ onLogin, onBack }) {
           >
             &larr; Back
           </button>
-          <p className="text-center mt-4 font-mono text-[0.65rem] text-on-surface-variant/40">
-            admin / zenith
-          </p>
         </div>
       </div>
     </div>
