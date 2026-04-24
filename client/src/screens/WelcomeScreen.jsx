@@ -50,6 +50,11 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
       imageUrl: prize.imageUrl || DEFAULT_CASE_IMAGE,
     }));
   }, [prizes]);
+  const legendaryLoopSlides = useMemo(() => (
+    legendarySlides.length > 1
+      ? [...legendarySlides, { ...legendarySlides[0], id: `${legendarySlides[0].id}-loop` }]
+      : legendarySlides
+  ), [legendarySlides]);
 
   useEffect(() => { document.title = 'Zenith Comp Co. — Case Opening'; }, []);
 
@@ -166,13 +171,13 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
             {/* Left — Case image */}
             <div className="hidden lg:block relative overflow-hidden border border-outline-variant shadow-md">
               <div
-                className="legendary-slide-track absolute inset-0 flex"
+                className={`${legendarySlides.length > 1 ? 'legendary-slide-track' : ''} absolute inset-0 flex`}
                 style={{
                   '--legendary-slide-count': legendarySlides.length,
                   '--legendary-slide-duration': `${Math.max(legendarySlides.length, 1) * 5}s`,
                 }}
               >
-                {legendarySlides.map((slide, idx) => (
+                {legendaryLoopSlides.map((slide, idx) => (
                   <img
                     key={`${slide.id}-${idx}`}
                     alt={`${slide.name} — legendary prize`}
