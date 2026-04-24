@@ -6,6 +6,7 @@ import SummaryScreen from './screens/SummaryScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminLogin from './admin/AdminLogin';
 import AdminDashboard from './admin/AdminDashboard';
+import { subscribePrizeDataChanged } from './lib/api';
 
 export default function App() {
   const [screen, setScreen] = useState('welcome');
@@ -27,6 +28,25 @@ export default function App() {
   }, []);
 
   useEffect(() => { loadPrizes(); }, [loadPrizes]);
+  useEffect(() => subscribePrizeDataChanged(loadPrizes), [loadPrizes]);
+
+  useEffect(() => {
+    if (!['welcome', 'game', 'result', 'summary'].includes(screen)) return undefined;
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') loadPrizes();
+    };
+
+    const interval = setInterval(loadPrizes, 10000);
+    window.addEventListener('focus', loadPrizes);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', loadPrizes);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [screen, loadPrizes]);
 
   // User flow handlers
   const handleStart = useCallback((sessionData) => {
@@ -43,8 +63,9 @@ export default function App() {
       ...prev,
       results: [...(prev.results || []), result.prize],
     }));
+    loadPrizes(); // refresh prize inventory after every spin
     setScreen('result');
-  }, []);
+  }, [loadPrizes]);
 
   const handleContinue = useCallback(() => {
     if (lastResult.attemptsLeft <= 0) {
@@ -94,6 +115,9 @@ export default function App() {
           session={session}
           prizes={prizes}
           onResult={handleResult}
+          onRefreshPrizes={loadPrizes}
+          onBackHome={handlePlayAgain}
+          onGoToSummary={() => setScreen('summary')}
         />
       )}
 

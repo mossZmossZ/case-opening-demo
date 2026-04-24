@@ -265,4 +265,53 @@ router.get('/history', async (req, res) => {
   }
 });
 
+// ── Operations ─────────────────────────────────────────────────────────────
+
+// POST /api/admin/operations/reset-sessions — wipe all players & sessions
+router.post('/operations/reset-sessions', async (req, res) => {
+  try {
+    const [s, u] = await Promise.all([
+      Session.deleteMany({}),
+      User.deleteMany({}),
+    ]);
+    res.json({ sessionsDeleted: s.deletedCount, usersDeleted: u.deletedCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/operations/reset-stock — restore remainingStock = totalStock for all prizes
+router.post('/operations/reset-stock', async (req, res) => {
+  try {
+    const prizes = await Prize.find({});
+    await Promise.all(
+      prizes.map(p => Prize.findByIdAndUpdate(p._id, { remainingStock: p.totalStock }))
+    );
+    res.json({ updated: prizes.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/operations/generate-dummy — seed demo prizes across all tiers
+router.post('/operations/generate-dummy', async (req, res) => {
+  try {
+    const dummies = [
+      { name: 'Nutanix Sticker Pack',  description: 'Limited edition event stickers', tier: 'common',    weight: 50, totalStock: 100, iconKey: 'sticker'     },
+      { name: 'Nutanix T-Shirt',       description: 'Cloud Native edition tee',       tier: 'common',    weight: 40, totalStock: 80,  iconKey: 'tshirt'      },
+      { name: 'Nutanix Power Bank',    description: '10,000 mAh fast charge',          tier: 'rare',      weight: 20, totalStock: 30,  iconKey: 'powerbank'   },
+      { name: 'Nutanix Hoodie',        description: 'Exclusive event hoodie',          tier: 'rare',      weight: 15, totalStock: 20,  iconKey: 'hoodie'      },
+      { name: 'Nutanix Backpack',      description: 'Premium laptop backpack',         tier: 'epic',      weight: 8,  totalStock: 10,  iconKey: 'backpack'    },
+      { name: 'Nutanix Swag Box',      description: 'Curated premium swag bundle',     tier: 'epic',      weight: 5,  totalStock: 5,   iconKey: 'swagbox'     },
+      { name: 'VIP Cloud Pass',        description: 'Exclusive VIP event access',      tier: 'legendary', weight: 2,  totalStock: 2,   iconKey: 'vip'         },
+    ];
+    const created = await Prize.insertMany(
+      dummies.map(d => ({ ...d, remainingStock: d.totalStock }))
+    );
+    res.json({ created: created.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
