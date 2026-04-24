@@ -14,6 +14,8 @@ const NOUN = [
   'Fox', 'Cobra', 'Reaper', 'Knight', 'Demon', 'Striker',
 ];
 
+const MAX_ATTEMPT_SLOTS = 5;
+
 let _lastName = '';
 const generateRandomName = () => {
   let name;
@@ -34,6 +36,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ liveDrops: [], participants: 0, totalOpens: 0, inventory: { remainingCases: 0, legendaryDropRate: 0 } });
   const inputRef = useRef();
+  const maximumAttempts = stats.settings?.maximumAttempts || MAX_ATTEMPT_SLOTS;
 
   useEffect(() => { document.title = 'Zenith Comp Co. — Case Opening'; }, []);
 
@@ -56,6 +59,10 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
       unsubscribePrizeData();
     };
   }, []);
+
+  useEffect(() => {
+    if (tries > maximumAttempts) setTries(maximumAttempts);
+  }, [tries, maximumAttempts]);
 
   const handleGo = async () => {
     if (!name.trim()) { inputRef.current?.focus(); return; }
@@ -216,20 +223,28 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
                   <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">
                     Number of Attempts
                   </label>
-                  <div className="flex gap-2" role="group" aria-label="Select number of attempts">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setTries(n)}
-                        aria-pressed={tries === n}
-                        className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
-                          }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+                  <div className="flex gap-2" role="group" aria-label={`Select number of attempts, maximum ${maximumAttempts}`}>
+                    {Array.from({ length: MAX_ATTEMPT_SLOTS }, (_, i) => i + 1).map(n => {
+                      const locked = n > maximumAttempts;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => !locked && setTries(n)}
+                          disabled={locked}
+                          aria-pressed={!locked && tries === n}
+                          aria-label={locked ? `Attempt ${n} locked` : `${n} attempt${n === 1 ? '' : 's'}`}
+                          className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n && !locked
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : locked
+                              ? 'border-outline-variant bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed'
+                              : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
+                            }`}
+                        >
+                          {locked ? 'x' : n}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

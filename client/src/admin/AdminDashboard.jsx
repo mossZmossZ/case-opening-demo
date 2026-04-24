@@ -18,16 +18,19 @@ export default function AdminDashboard({ token, onLogout }) {
   const [tab, setTab] = useState('overview');
   const [dashboard, setDashboard] = useState(null);
   const [prizes, setPrizes] = useState([]);
+  const [settings, setSettings] = useState({ maximumAttempts: 5 });
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const [dash, prz] = await Promise.all([
+      const [dash, prz, appSettings] = await Promise.all([
         adminApi.getDashboard(token),
         adminApi.getPrizes(token),
+        adminApi.getSettings(token),
       ]);
       setDashboard(dash);
       setPrizes(prz);
+      setSettings(appSettings);
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('token')) onLogout();
     } finally {
@@ -127,7 +130,7 @@ export default function AdminDashboard({ token, onLogout }) {
               {tab === 'prizes'      && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
               {tab === 'probability' && <ProbabilityTab token={token} prizes={prizes} onRefresh={refresh} />}
               {tab === 'history'     && <HistoryTab token={token} />}
-              {tab === 'operations'  && <OperationsTab token={token} onRefresh={refresh} />}
+              {tab === 'operations'  && <OperationsTab token={token} settings={settings} onRefresh={refresh} />}
             </div>
           )}
         </main>

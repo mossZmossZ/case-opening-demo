@@ -6,6 +6,7 @@ import AdminUser from '../models/AdminUser.js';
 import Prize from '../models/Prize.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
+import AppSettings from '../models/AppSettings.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { uploadToS3 } from '../services/s3.js';
 
@@ -21,6 +22,14 @@ const upload = multer({
 });
 
 const router = Router();
+
+async function getAppSettings() {
+  return AppSettings.findOneAndUpdate(
+    { key: 'global' },
+    { $setOnInsert: { maximumAttempts: 5 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+}
 
 // POST /api/admin/login
 router.post('/login', async (req, res) => {
@@ -219,6 +228,35 @@ router.put('/rates', async (req, res) => {
       tier: p.tier,
       weight: p.weight,
     })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/settings — get global app settings
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await getAppSettings();
+    res.json({ maximumAttempts: settings.maximumAttempts });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/admin/settings — update global app settings
+router.put('/settings', async (req, res) => {
+  try {
+    const maximumAttempts = Number(req.body.maximumAttempts);
+    if (!Number.isInteger(maximumAttempts) || maximumAttempts < 1 || maximumAttempts > 5) {
+      return res.status(400).json({ error: 'Maximum attempts must be between 1 and 5' });
+    }
+
+    const settings = await AppSettings.findOneAndUpdate(
+      { key: 'global' },
+      { maximumAttempts, updatedAt: new Date() },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    res.json({ maximumAttempts: settings.maximumAttempts });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
