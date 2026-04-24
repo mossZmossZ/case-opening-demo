@@ -32,17 +32,24 @@ function playTick(audioCtx) {
 // Sentinel for blank filler slots in the reel
 const EMPTY = { _empty: true };
 
-// Real prizes appear roughly 1-in-4 slots; rest are blank fillers.
-// This prevents repetition when the prize pool is small.
+// Density: how often a real prize appears per slot.
+// With 1 type: repeat every 4th (0.25) — avoids a wall of the same card.
+// With 2 types: every other (0.5) — still gives breathing room.
+// With 3+ types: full (1.0) — enough variety, no empties needed.
+function slotDensity(poolSize) {
+  if (poolSize >= 3) return 1.0;
+  if (poolSize === 2) return 0.5;
+  return 0.25;
+}
+
 function buildReel(allPrizes, winPrize) {
-  const pool = allPrizes.length > 0 ? allPrizes : [winPrize];
-  const winIdx = REEL_LEN - 10;
+  const pool    = allPrizes.length > 0 ? allPrizes : [winPrize];
+  const density = slotDensity(pool.length);
+  const winIdx  = REEL_LEN - 10;
 
   const items = Array.from({ length: REEL_LEN }, (_, i) => {
     if (i === winIdx) return winPrize;
-    // Keep 2 slots either side of the win blank so the winner stands out
-    if (Math.abs(i - winIdx) <= 2) return EMPTY;
-    return Math.random() < 0.25
+    return Math.random() < density
       ? pool[Math.floor(Math.random() * pool.length)]
       : EMPTY;
   });
@@ -50,19 +57,11 @@ function buildReel(allPrizes, winPrize) {
   return { items, winIdx };
 }
 
-// Guarantee at least 1 empty slot between every prize card so the reel
-// never looks like a repeated list, even with a pool of 1 prize.
 function makeInitialReel(prizes) {
-  const items = [];
-  for (let i = 0; i < 20; i++) {
-    // Prize slot: place a real prize, then always follow with at least 1 empty
-    if (i % 4 === 1) {
-      items.push(prizes[Math.floor(Math.random() * prizes.length)]);
-    } else {
-      items.push(EMPTY);
-    }
-  }
-  return items;
+  const density = slotDensity(prizes.length);
+  return Array.from({ length: 20 }, () =>
+    Math.random() < density ? prizes[Math.floor(Math.random() * prizes.length)] : EMPTY
+  );
 }
 
 function ReelCard({ prize }) {
@@ -98,7 +97,7 @@ function ReelCard({ prize }) {
   );
 }
 
-export default function GameScreen({ session, prizes, onResult, onRefreshPrizes, onBackHome }) {
+export default function GameScreen({ session, prizes, onResult, onRefreshPrizes, onBackHome, onGoToSummary }) {
   const [phase, setPhase]         = useState('idle');
   const [reelItems, setReelItems] = useState([]);
   const [stats, setStats]         = useState({ liveDrops: [] });
@@ -252,21 +251,37 @@ export default function GameScreen({ session, prizes, onResult, onRefreshPrizes,
         </div>
 
         {prizes.length === 0 ? (
-          /* ── Empty State: no prizes in stock ── */
+          /* ── Empty State: prize pool ran out mid-session ── */
           <div className="w-full max-w-7xl flex flex-col items-center justify-center gap-6 py-20 border border-outline-variant bg-surface-container-low">
             <span className="material-symbols-outlined text-6xl text-on-surface-variant" aria-hidden="true" style={{ fontVariationSettings: "'FILL' 0" }}>inventory_2</span>
             <div className="text-center">
               <h2 className="font-headline text-2xl font-bold text-on-surface tracking-tight">All Prizes Claimed</h2>
-              <p className="mt-2 text-sm text-on-surface-variant uppercase tracking-widest">The prize pool is currently empty. Check back soon.</p>
+              <p className="mt-2 text-sm text-on-surface-variant uppercase tracking-widest">
+                {attemptsUsed > 0
+                  ? 'The prize pool ran out. Your results have been saved.'
+                  : 'The prize pool is currently empty. Check back soon.'}
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={onBackHome}
-              className="flex items-center gap-2 px-6 h-11 bg-primary text-on-primary text-sm font-bold uppercase tracking-wide hover:bg-primary-fixed transition-colors shadow-[0_2px_12px_rgba(224,96,32,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">home</span>
-              Back to Home
-            </button>
+            <div className="flex gap-3">
+              {attemptsUsed > 0 && (
+                <button
+                  type="button"
+                  onClick={onGoToSummary}
+                  className="flex items-center gap-2 px-6 h-11 bg-primary text-on-primary text-sm font-bold uppercase tracking-wide hover:bg-primary-fixed transition-colors shadow-[0_2px_12px_rgba(224,96,32,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <span className="material-symbols-outlined text-base" aria-hidden="true">workspace_premium</span>
+                  View My Results
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onBackHome}
+                className="flex items-center gap-2 px-6 h-11 border border-outline-variant text-on-surface text-sm font-bold uppercase tracking-wide hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <span className="material-symbols-outlined text-base" aria-hidden="true">home</span>
+                Back to Home
+              </button>
+            </div>
           </div>
         ) : (
           /* ── Reel Container ── */

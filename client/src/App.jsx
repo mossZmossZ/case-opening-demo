@@ -117,6 +117,7 @@ export default function App() {
           onResult={handleResult}
           onRefreshPrizes={loadPrizes}
           onBackHome={handlePlayAgain}
+          onGoToSummary={() => setScreen('summary')}
         />
       )}
 
