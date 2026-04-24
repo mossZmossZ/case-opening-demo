@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { gameApi, subscribePrizeDataChanged } from '../lib/api';
 import Spinner from '../components/Spinner';
 import { censorName } from '../lib/utils';
@@ -15,6 +15,7 @@ const NOUN = [
 ];
 
 const MAX_ATTEMPT_SLOTS = 5;
+const DEFAULT_CASE_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAascBYPGIt_F19CWBhUMOaRrlIRkznAPdvxTNURHzt2ec05MmnwNS8VFWWxYJzdUdcAtx6HaD_C9lq3plgI1OBQncj2LzYOGqAkd16fJIbl1N9xeLh4UC9GsV8ZX8ZOs4TZit03bPgJb2oGIwtFpmRMnOJybEXm_qqOgcTaTUHWv6-k5sW0-HBog8xbIVu2kicJCEs588bJYEKu4Pvj9-RzF7FunIOkoD8ceQEvotKwd4jxURVPhLRRJdaMDqv-AnzJCZtIM1Y79p';
 
 let _lastName = '';
 const generateRandomName = () => {
@@ -29,7 +30,7 @@ const generateRandomName = () => {
   return name;
 };
 
-export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
+export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes = [] }) {
   const [name, setName] = useState('');
   const [tries, setTries] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,23 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [stats, setStats] = useState({ liveDrops: [], participants: 0, totalOpens: 0, inventory: { remainingCases: 0, legendaryDropRate: 0 } });
   const inputRef = useRef();
   const maximumAttempts = stats.settings?.maximumAttempts || MAX_ATTEMPT_SLOTS;
+  const legendarySlides = useMemo(() => {
+    const legendaryPrizes = prizes.filter(prize => prize.tier === 'legendary');
+    if (legendaryPrizes.length === 0) {
+      return [{ id: 'default-case', name: 'Zenith Innovation Case', imageUrl: DEFAULT_CASE_IMAGE }];
+    }
+
+    return legendaryPrizes.map(prize => ({
+      id: prize._id || prize.name,
+      name: prize.name || 'Legendary Prize',
+      imageUrl: prize.imageUrl || DEFAULT_CASE_IMAGE,
+    }));
+  }, [prizes]);
+  const legendaryLoopSlides = useMemo(() => (
+    legendarySlides.length > 1
+      ? [...legendarySlides, { ...legendarySlides[0], id: `${legendarySlides[0].id}-loop` }]
+      : legendarySlides
+  ), [legendarySlides]);
 
   useEffect(() => { document.title = 'Zenith Comp Co. — Case Opening'; }, []);
 
@@ -142,9 +160,6 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
             <h1 className="text-2xl lg:text-3xl font-bold font-headline tracking-tight text-on-surface leading-tight" style={{ textWrap: 'balance' }}>
               Open Your Innovation Case
             </h1>
-            <p className="text-sm text-on-surface-variant mt-1">
-              Deploy your cloud-native assets and extract rare hardware from the Kinetic Foundry.
-            </p>
           </div>
 
           {/* ── Section 2: Two-column grid ── */}
@@ -152,14 +167,31 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
 
             {/* Left — Case image */}
             <div className="hidden lg:block relative overflow-hidden border border-outline-variant shadow-md">
-              <img
-                alt="Zenith Innovation Case — a futuristic hardware crate glowing with orange light"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAascBYPGIt_F19CWBhUMOaRrlIRkznAPdvxTNURHzt2ec05MmnwNS8VFWWxYJzdUdcAtx6HaD_C9lq3plgI1OBQncj2LzYOGqAkd16fJIbl1N9xeLh4UC9GsV8ZX8ZOs4TZit03bPgJb2oGIwtFpmRMnOJybEXm_qqOgcTaTUHWv6-k5sW0-HBog8xbIVu2kicJCEs588bJYEKu4Pvj9-RzF7FunIOkoD8ceQEvotKwd4jxURVPhLRRJdaMDqv-AnzJCZtIM1Y79p"
-                width="800"
-                height="600"
-                fetchpriority="high"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              <div
+                className={`${legendarySlides.length > 1 ? 'legendary-slide-track' : ''} absolute inset-0 flex`}
+                style={{
+                  '--legendary-slide-count': legendarySlides.length,
+                  '--legendary-slide-duration': `${Math.max(legendarySlides.length, 1) * 5}s`,
+                }}
+              >
+                {legendaryLoopSlides.map((slide, idx) => (
+                  <img
+                    key={`${slide.id}-${idx}`}
+                    alt={`${slide.name} — legendary prize`}
+                    src={slide.imageUrl}
+                    width="800"
+                    height="600"
+                    fetchPriority={idx === 0 ? 'high' : undefined}
+                    loading={idx === 0 ? undefined : 'lazy'}
+                    onError={(event) => {
+                      if (event.currentTarget.src !== DEFAULT_CASE_IMAGE) {
+                        event.currentTarget.src = DEFAULT_CASE_IMAGE;
+                      }
+                    }}
+                    className="h-full min-w-full object-cover"
+                  />
+                ))}
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1410]/75 via-[#1A1410]/10 to-transparent" aria-hidden="true" />
 
               {/* Corner tags */}

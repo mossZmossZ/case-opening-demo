@@ -1,0 +1,82 @@
+name: CI — Build & Scan (PR)
+
+# PR-only pipeline: lint Dockerfiles, review new dependencies, build every
+# service image locally, run Trivy container CVE scan (reports to Security
+# tab — does NOT block merge). Nothing is pushed to Docker Hub here.
+
+on:
+  pull_request:
+    branches: [main, Development]
+
+# Newer PR push → cancel the in-flight run for the same PR.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write   # needed to upload Trivy SARIF to the Security tab
+
+jobs:
+  # ── 1. Dependency review (GitHub native, free, fast) ──────────────────────
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
+
+  # ── 2. Dockerfile lint + image build + Trivy scan, per service ────────────
+  build-and-scan:
+    name: Build & Scan — ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: client,        context: ./client,                     image: case-opening-demo-client }
+          - { name: auth-service,  context: ./services/auth-service,      image: case-opening-demo-auth-service }
+          - { name: game-service,  context: ./services/game-service,      image: case-opening-demo-game-service }
+          - { name: admin-service, context: ./services/admin-service,     image: case-opening-demo-admin-service }
+          - { name: prize-service, context: ./services/prize-service,     image: case-opening-demo-prize-service }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Dockerfile (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.service.context }}/Dockerfile
+          failure-threshold: warning
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally, do not push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          load: true
+          tags: local/${{ matrix.service.image }}:ci-${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+      - name: Trivy scan (report only — non-blocking)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: local/${{ matrix.service.image }}:ci-${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.service.name }}.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.service.name }}.sarif
+          category: trivy-${{ matrix.service.name }}

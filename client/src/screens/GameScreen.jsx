@@ -8,6 +8,7 @@ const CARD_W = 200;
 const CARD_GAP = 16;
 const CARD_STEP = CARD_W + CARD_GAP; // 216 px per slot
 const SPIN_DURATION = 5500;          // ms — CS:GO slow-reveal
+const AUTO_REDIRECT_DELAY = 3000;
 
 // Short white-noise burst → mechanical click
 function playTick(audioCtx) {
@@ -114,6 +115,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
   const [localResults, setLocalResults] = useState([]); // prizes won this session
   const [lastPrize, setLastPrize] = useState(null);
   const [spinError, setSpinError] = useState('');
+  const [redirectCountdown, setRedirectCountdown] = useState(AUTO_REDIRECT_DELAY / 1000);
 
   const trackRef = useRef();
   const audioCtxRef = useRef(null);
@@ -130,6 +132,30 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
 
   useEffect(() => { document.title = 'Open Your Case — Zenith Comp Co.'; }, []);
   useEffect(() => () => { cancelAnimationFrame(tickRafRef.current); }, []);
+  useEffect(() => {
+    const shouldAutoRedirect =
+      localResults.length > 0 && (phase === 'done' || prizes.length === 0);
+
+    if (!shouldAutoRedirect) {
+      setRedirectCountdown(AUTO_REDIRECT_DELAY / 1000);
+      return undefined;
+    }
+
+    setRedirectCountdown(AUTO_REDIRECT_DELAY / 1000);
+
+    const intervalId = setInterval(() => {
+      setRedirectCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+    }, 1000);
+
+    const timeoutId = setTimeout(() => {
+      onSummary({ ...session, results: localResults });
+    }, AUTO_REDIRECT_DELAY);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [phase, prizes.length, localResults, onSummary, session]);
 
   const attemptsUsed = localResults.length;
   const attemptsLeft = session.totalAttempts - attemptsUsed;
@@ -214,7 +240,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
         setLastPrize(winPrize);
         onRefreshPrizes();
 
-        // All attempts done → show "View My Results"; otherwise allow next spin
+        // All attempts done → redirect to summary after a short delay
         if (session.totalAttempts - newResults.length <= 0) {
           setPhase('done');
         } else {
@@ -313,17 +339,9 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
             </div>
             <div className="flex gap-3">
               {localResults.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onSummary({ ...session, results: localResults })}
-                  className="flex items-center gap-2 px-6 h-11 bg-primary text-on-primary text-sm font-bold uppercase tracking-wide hover:bg-primary-fixed transition-colors shadow-[0_2px_12px_rgba(224,96,32,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <span className="material-symbols-outlined text-base" aria-hidden="true">
-                    workspace_premium
-                  </span>
-                  View My Results
-                </button>
+                <p className="h-11 px-4 flex items-center text-xs sm:text-sm font-bold uppercase tracking-wide text-primary">
+                  Finalizing your results... Redirecting in {redirectCountdown}.
+                </p>
               )}
               <button
                 type="button"
@@ -467,24 +485,14 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
               </div>
             </div>
           ) : phase === 'done' ? (
-            <button
-              onClick={() => onSummary({ ...session, results: localResults })}
-              className="group relative px-12 py-5 bg-primary text-on-primary hover:bg-primary-fixed transition-colors transform hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(224,96,32,0.3)] hover:shadow-[0_8px_30px_rgba(224,96,32,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              style={{ touchAction: 'manipulation' }}
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className="material-symbols-outlined font-bold"
-                  aria-hidden="true"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  workspace_premium
-                </span>
-                <span className="font-headline font-bold text-xl uppercase tracking-tight">
-                  View My Results
-                </span>
-              </div>
-            </button>
+            <div className="text-center" aria-live="polite" aria-label="Preparing results">
+              <span className="font-body text-primary text-lg font-bold uppercase tracking-[0.2em]">
+                Finalizing Results...
+              </span>
+              <p className="mt-2 text-xs sm:text-sm uppercase tracking-widest text-on-surface-variant">
+                Redirecting in {redirectCountdown}
+              </p>
+            </div>
           ) : (
             <button
               onClick={openCase}

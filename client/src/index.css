@@ -115,6 +115,11 @@ h1, h2, h3, h4, h5, h6, .font-headline {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes legendary-slide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(var(--legendary-slide-count) * -100%)); }
+}
+
 .animate-screen-in   { animation: screen-in 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-result-pop  { animation: result-pop 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-float       { animation: float 3s ease-in-out infinite; }
@@ -123,6 +128,10 @@ h1, h2, h3, h4, h5, h6, .font-headline {
 .animate-shake       { animation: shake 300ms ease; }
 .animate-spin-loader { animation: spin 600ms linear infinite; }
 .animate-scan        { animation: scan 1s linear infinite; }
+.legendary-slide-track {
+  animation: legendary-slide var(--legendary-slide-duration, 5s) ease-in-out infinite;
+  will-change: transform;
+}
 
 /* Respect user motion preferences */
 @media (prefers-reduced-motion: reduce) {
@@ -132,7 +141,8 @@ h1, h2, h3, h4, h5, h6, .font-headline {
   .animate-pulse-ring,
   .animate-tier-shine,
   .animate-shake,
-  .animate-scan {
+  .animate-scan,
+  .legendary-slide-track {
     animation: none;
   }
   .animate-spin-loader {

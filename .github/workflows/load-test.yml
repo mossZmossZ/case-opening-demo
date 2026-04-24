@@ -1,0 +1,76 @@
+name: Load Test — k6
+
+# Manual pipeline. Pulls images from Docker Hub at the tag you pick
+# (default: main-latest), boots the full prod compose stack, runs a k6 smoke
+# test against the frontend URL, uploads the summary as an artifact.
+#
+# No extra secrets needed — JWT_SECRET is synthesized for the ephemeral stack.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag to test (e.g. sha-abc1234 or main-latest)'
+        required: true
+        default: 'main-latest'
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: k6 smoke (tag=${{ inputs.image_tag }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub (pull private images)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Write .env for docker compose
+        run: |
+          cat > .env <<EOF
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG=${{ inputs.image_tag }}
+          JWT_SECRET=ci-load-test-not-a-real-secret
+          EOF
+
+      - name: Start stack
+        run: docker compose -f docker-compose-prod.yml up -d
+
+      - name: Wait for frontend to be healthy
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8080/api/game/stats >/dev/null; then
+              echo "stack ready after ${i}s"; exit 0
+            fi
+            sleep 2
+          done
+          echo "stack did not become ready"; docker compose -f docker-compose-prod.yml logs --tail=200; exit 1
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 smoke
+        env:
+          BASE_URL: http://localhost:8080
+        run: k6 run --summary-export=k6-summary.json tests/k6/smoke.js
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          retention-days: 30
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose-prod.yml logs --tail=300
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose-prod.yml down -v
