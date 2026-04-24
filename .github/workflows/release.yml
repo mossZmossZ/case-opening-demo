@@ -70,7 +70,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
 
       - name: Trivy scan — gate on HIGH/CRITICAL
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: local/${{ matrix.service.image }}:scan
           severity: CRITICAL,HIGH
