@@ -184,15 +184,84 @@ port as a minimum. The client exposes HTTP:
 
 ---
 
-## 8. What this repo's pipelines do / don't do
+## 8. CI/CD pipeline — single file, four stages
 
-| Pipeline             | Trigger                         | Pushes to Docker Hub? |
-|----------------------|---------------------------------|-----------------------|
-| `ci.yml`             | PR to `main` / `Development`    | No (build + scan only) |
-| `release.yml`        | push to `main` / `Development`  | **Yes** — `sha-<short>` + `<branch>-latest` |
-| `load-test.yml`      | manual                          | No (pulls & tests)    |
-| `dast.yml`           | manual                          | No (pulls & scans)    |
+All pipelines are consolidated into **`.github/workflows/ci.yml`**.  
+Trigger: **push to `main` only**. There are no PR pipelines and no manual dispatch.
+
+```
+push to main
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Stage 1 · Build & Scan (parallel, one job per service)       │
+│                                                              │
+│  [client]  [auth-service]  [game-service]  [admin-service]  [prize-service]
+│  Hadolint → buildx build (local) → Trivy CVE gate           │
+│  EXIT-CODE 1 on HIGH/CRITICAL with fix → blocks Stage 2     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ all 5 must pass
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Stage 2 · Push to Docker Hub (parallel, one job per service) │
+│                                                              │
+│  [client]  [auth-service]  [game-service]  [admin-service]  [prize-service]
+│  Cache hit from Stage 1 → build+push:                        │
+│    sha-<7char>   ← immutable (GitOps / kustomize uses this)  │
+│    main-latest   ← floating  (humans / quick dev pulls)      │
+│  Each job uploads a refs-<service>.json artifact             │
+└──────┬───────────────────────────────────────────────────────┘
+       │
+       ├──────────────────────┐
+       ▼                      ▼
+┌─────────────┐     ┌─────────────────────┐
+│ Stage 3a    │     │ Stage 3b            │
+│ Load Test   │     │ DAST (OWASP ZAP)    │
+│ [k6 smoke]  │     │ [zap-baseline.py]   │
+│             │     │                     │
+│ Pulls sha-  │     │ Pulls sha-tagged    │
+│ tagged imgs │     │ imgs from DockerHub │
+│ via compose │     │ via compose         │
+│             │     │                     │
+│ continue-on │     │ continue-on-error:  │
+│ -error: true│     │ true (soft gate)    │
+└──────┬──────┘     └──────────┬──────────┘
+       │                       │
+       └──────────┬────────────┘
+                  │ waits for both (pass or fail)
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Stage 4 · Publish image-refs.json                            │
+│                                                              │
+│  Combines refs-*.json → image-refs.json (includes           │
+│  qualityGates.loadTest + qualityGates.dast status)          │
+│  Uploads as artifact `image-refs` (retained 90 days)        │
+│  Writes run summary with stage results table                 │
+│                                                              │
+│  Only runs if Stage 2 (push) succeeded.                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Stage gates summary
+
+| Stage | Job | Hard gate? | Blocks if fails? |
+|-------|-----|-----------|-----------------|
+| 1 | Build & Scan (Trivy) | **Yes** | Stops all downstream stages |
+| 2 | Push to Docker Hub | Yes | Stops Stage 3 & 4 |
+| 3a | Load Test (k6) | No | Reports failure, Stage 4 still runs |
+| 3b | DAST (ZAP) | No | Reports failure, Stage 4 still runs |
+| 4 | Publish refs | — | Final step, publishes regardless of Stage 3 |
+
+### Artifacts produced per run
+
+| Artifact name | Contents | Retention |
+|---|---|---|
+| `refs-<service>` (×5) | Per-service image ref JSON | 30 days |
+| `image-refs` | Combined refs for GitOps (all 5 services) | 90 days |
+| `k6-report` | k6 summary JSON | 7 days |
+| `zap-report` | ZAP HTML + JSON + Markdown | 7 days |
 
 GitOps / Kustomize updates are **not** done here — that's the next repo's
-job. This repo's contract ends at "image pushed to Docker Hub + artifact
-`image-refs.json` available to the next workflow".
+job. Download the `image-refs` artifact from the run and feed it to the
+GitOps repo workflow. This repo's contract ends at "images pushed to Docker
+Hub + `image-refs.json` artifact available".
