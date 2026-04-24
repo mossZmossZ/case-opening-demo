@@ -160,9 +160,6 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
             <h1 className="text-2xl lg:text-3xl font-bold font-headline tracking-tight text-on-surface leading-tight" style={{ textWrap: 'balance' }}>
               Open Your Innovation Case
             </h1>
-            <p className="text-sm text-on-surface-variant mt-1">
-              Deploy your cloud-native assets and extract rare hardware from the Kinetic Foundry.
-            </p>
           </div>
 
           {/* ── Section 2: Two-column grid ── */}
