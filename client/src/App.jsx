@@ -84,6 +84,7 @@ export default function App() {
           onStart={handleStart}
           onAdmin={() => setScreen('admin-login')}
           onLeaderboard={() => setScreen('leaderboard')}
+          prizes={prizes}
         />
       )}
 
