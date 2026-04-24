@@ -1,82 +1,374 @@
-name: CI — Build & Scan (PR)
+name: CI/CD — Main
 
-# PR-only pipeline: lint Dockerfiles, review new dependencies, build every
-# service image locally, run Trivy container CVE scan (reports to Security
-# tab — does NOT block merge). Nothing is pushed to Docker Hub here.
+# Triggers on every push to main. Four sequential stages:
+#
+#   Stage 1 │ Build & Scan    — Dockerfile lint + Trivy CVE gate (per service)
+#   Stage 2 │ Push            — Push sha-tagged images to Docker Hub (per service)
+#   Stage 3 │ Quality Gates   — k6 load test + OWASP ZAP DAST (parallel)
+#   Stage 4 │ GitOps Artifact — Publish image-refs.json for kustomize update
+#
+# Only push to main triggers this pipeline.
+# Trivy (Stage 1) is a hard gate: HIGH/CRITICAL CVEs with available fixes block all downstream stages.
+# Load-test and DAST (Stage 3) are soft gates: failures are reported but do not block image-refs publication.
 
 on:
-  pull_request:
-    branches: [main, Development]
+  push:
+    branches: [main]
 
-# Newer PR push → cancel the in-flight run for the same PR.
+# Serialize runs on main — no race on the floating main-latest tag.
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: cicd-main
+  cancel-in-progress: false
 
 permissions:
   contents: read
-  pull-requests: read
-  security-events: write   # needed to upload Trivy SARIF to the Security tab
 
+env:
+  REGISTRY_NS: ${{ secrets.DOCKERHUB_USERNAME }}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 1 — Build & Security Gate (runs per service in parallel)
+# Fails the entire pipeline if any service image has HIGH/CRITICAL CVEs
+# with an available fix. All five must pass before Stage 2 starts.
+# ═══════════════════════════════════════════════════════════════════════════
 jobs:
-  # ── 1. Dependency review (GitHub native, free, fast) ──────────────────────
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: always
-
-  # ── 2. Dockerfile lint + image build + Trivy scan, per service ────────────
-  build-and-scan:
-    name: Build & Scan — ${{ matrix.service.name }}
+  build-scan:
+    name: "1 · Build & Scan [${{ matrix.service.name }}]"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         service:
-          - { name: client,        context: ./client,                     image: case-opening-demo-client }
-          - { name: auth-service,  context: ./services/auth-service,      image: case-opening-demo-auth-service }
-          - { name: game-service,  context: ./services/game-service,      image: case-opening-demo-game-service }
-          - { name: admin-service, context: ./services/admin-service,     image: case-opening-demo-admin-service }
-          - { name: prize-service, context: ./services/prize-service,     image: case-opening-demo-prize-service }
+          - { name: client,        context: ./client,                 image: case-opening-demo-client }
+          - { name: auth-service,  context: ./services/auth-service,  image: case-opening-demo-auth-service }
+          - { name: game-service,  context: ./services/game-service,  image: case-opening-demo-game-service }
+          - { name: admin-service, context: ./services/admin-service, image: case-opening-demo-admin-service }
+          - { name: prize-service, context: ./services/prize-service, image: case-opening-demo-prize-service }
     steps:
       - uses: actions/checkout@v4
 
-      - name: Lint Dockerfile (Hadolint)
+      - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ${{ matrix.service.context }}/Dockerfile
           failure-threshold: warning
 
-      - name: Set up Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image (load locally, do not push)
+      - name: Build image (local, scan-only — not pushed)
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.service.context }}
           load: true
-          tags: local/${{ matrix.service.image }}:ci-${{ github.sha }}
+          tags: local/${{ matrix.service.image }}:ci
           cache-from: type=gha,scope=${{ matrix.service.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
 
-      - name: Trivy scan (report only — non-blocking)
-        uses: aquasecurity/trivy-action@0.28.0
+      # Hard gate: job fails (and blocks Stage 2) on HIGH/CRITICAL with a fix.
+      - name: Trivy — CVE gate
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
-          image-ref: local/${{ matrix.service.image }}:ci-${{ github.sha }}
-          format: sarif
-          output: trivy-${{ matrix.service.name }}.sarif
+          image-ref: local/${{ matrix.service.image }}:ci
+          format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
 
-      - name: Upload Trivy SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 2 — Push to Docker Hub (per service, after ALL Stage 1 jobs pass)
+#
+# Tag strategy (immutable first, floating second):
+#   sha-<7char>   — immutable, used by GitOps / kustomize
+#   main-latest   — floating, for humans / quick dev pulls
+#
+# Each job caches the buildx layer from Stage 1, so this is a near-instant
+# cache hit — no image is rebuilt from scratch.
+# ═══════════════════════════════════════════════════════════════════════════
+  push:
+    name: "2 · Push [${{ matrix.service.name }}]"
+    needs: build-scan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: client,        context: ./client,                 image: case-opening-demo-client }
+          - { name: auth-service,  context: ./services/auth-service,  image: case-opening-demo-auth-service }
+          - { name: game-service,  context: ./services/game-service,  image: case-opening-demo-game-service }
+          - { name: admin-service, context: ./services/admin-service, image: case-opening-demo-admin-service }
+          - { name: prize-service, context: ./services/prize-service, image: case-opening-demo-prize-service }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHORT="$(git rev-parse --short=7 HEAD)"
+          IMG="${{ env.REGISTRY_NS }}/${{ matrix.service.image }}"
+          echo "short=${SHORT}"                     >> "$GITHUB_OUTPUT"
+          echo "sha_tag=${IMG}:sha-${SHORT}"        >> "$GITHUB_OUTPUT"
+          echo "branch_tag=${IMG}:main-latest"      >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Cache hit from Stage 1 — buildx does not re-execute any build steps.
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.sha_tag }}
+            ${{ steps.tags.outputs.branch_tag }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+
+      - name: Write image ref fragment
+        run: |
+          mkdir -p refs
+          cat > refs/${{ matrix.service.name }}.json <<EOF
+          {
+            "service": "${{ matrix.service.name }}",
+            "image":   "${{ env.REGISTRY_NS }}/${{ matrix.service.image }}",
+            "tag":     "sha-${{ steps.tags.outputs.short }}",
+            "ref":     "${{ steps.tags.outputs.sha_tag }}"
+          }
+          EOF
+
+      - name: Upload ref fragment
+        uses: actions/upload-artifact@v4
+        with:
+          name: refs-${{ matrix.service.name }}
+          path: refs/${{ matrix.service.name }}.json
+          retention-days: 30
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 3 — Quality Gates (parallel: k6 + ZAP run at the same time)
+#
+# Both jobs pull the freshly-pushed sha-tagged images from Docker Hub and
+# spin up the full docker-compose-prod.yml stack for testing.
+# These are soft gates: continue-on-error: true means a failure is visible
+# in the run summary but does not prevent Stage 4 from publishing the GitOps
+# artifact. Trivy (Stage 1) is the hard security gate.
+# ═══════════════════════════════════════════════════════════════════════════
+  load-test:
+    name: "3 · Load Test [k6]"
+    needs: push
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub (pull images)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Write .env for docker compose
+        run: |
+          SHORT="$(git rev-parse --short=7 HEAD)"
+          cat > .env <<EOF
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG=sha-${SHORT}
+          JWT_SECRET=ci-load-test-not-a-real-secret
+          EOF
+
+      - name: Start full stack
+        run: docker compose -f docker-compose-prod.yml up -d
+
+      - name: Wait for stack to be healthy
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8080/api/game/stats >/dev/null; then
+              echo "stack ready (${i}s)"; exit 0
+            fi
+            sleep 2
+          done
+          echo "stack did not become ready" >&2
+          docker compose -f docker-compose-prod.yml logs --tail=200
+          exit 1
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 smoke
+        env:
+          BASE_URL: http://localhost:8080
+        run: k6 run --summary-export=k6-summary.json tests/k6/smoke.js
+
+      - name: Upload k6 summary
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          sarif_file: trivy-${{ matrix.service.name }}.sarif
-          category: trivy-${{ matrix.service.name }}
+          name: k6-report
+          path: k6-summary.json
+          retention-days: 7
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose-prod.yml logs --tail=300
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose-prod.yml down -v
+
+  dast:
+    name: "3 · DAST [OWASP ZAP]"
+    needs: push
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Write .env for docker compose
+        run: |
+          SHORT="$(git rev-parse --short=7 HEAD)"
+          cat > .env <<EOF
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG=sha-${SHORT}
+          JWT_SECRET=ci-dast-not-a-real-secret
+          EOF
+
+      - name: Start full stack
+        run: docker compose -f docker-compose-prod.yml up -d
+
+      - name: Wait for stack to be healthy
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8080/api/game/stats >/dev/null; then
+              echo "stack ready (${i}s)"; exit 0
+            fi
+            sleep 2
+          done
+          echo "stack did not become ready" >&2
+          docker compose -f docker-compose-prod.yml logs --tail=200
+          exit 1
+
+      - name: Pull ZAP image
+        run: docker pull ghcr.io/zaproxy/zaproxy:stable -q
+
+      - name: Allow ZAP to write reports to workspace
+        run: chmod a+w "${{ github.workspace }}"
+
+      - name: ZAP baseline scan (passive — no active probes)
+        continue-on-error: true
+        run: |
+          docker run --rm --network host \
+            -v ${{ github.workspace }}:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+              -t http://localhost:8080 \
+              -r zap-report.html \
+              -J zap-report.json \
+              -w zap-report.md
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: |
+            zap-report.html
+            zap-report.json
+            zap-report.md
+          retention-days: 7
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose-prod.yml logs --tail=300
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose-prod.yml down -v
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 4 — Publish GitOps Artifact
+#
+# Collects per-service ref fragments from Stage 2, combines them into a
+# single image-refs.json, and uploads it as a GitHub Actions artifact.
+#
+# The downstream GitOps repo downloads this artifact and runs:
+#   kustomize edit set image <service>=<ref>
+# for each entry in services[], then commits the overlay change.
+#
+# Runs after Stage 3 completes (whether or not load-test / DAST passed).
+# ═══════════════════════════════════════════════════════════════════════════
+  publish-refs:
+    name: "4 · Publish image-refs.json"
+    needs: [push, load-test, dast]
+    runs-on: ubuntu-latest
+    if: always() && needs.push.result == 'success'
+    steps:
+      - name: Download all ref fragments
+        uses: actions/download-artifact@v4
+        with:
+          pattern: refs-*
+          path: refs
+          merge-multiple: true
+
+      - name: Combine into image-refs.json
+        run: |
+          SHORT="$(echo '${{ github.sha }}' | cut -c1-7)"
+          jq -s \
+            --arg sha      "${{ github.sha }}" \
+            --arg commit7  "${SHORT}" \
+            --arg branch   "main" \
+            --arg repo     "${{ github.repository }}" \
+            --arg runUrl   "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --argjson loadTest "${{ needs.load-test.result == 'success' }}" \
+            --argjson dast     "${{ needs.dast.result == 'success' }}" \
+            '{
+               commit:         $sha,
+               commit7:        $commit7,
+               branch:         $branch,
+               repo:           $repo,
+               runUrl:         $runUrl,
+               qualityGates: { loadTest: $loadTest, dast: $dast },
+               services:       .
+             }' refs/*.json > image-refs.json
+          cat image-refs.json
+
+      - name: Upload image-refs.json artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-refs
+          path: image-refs.json
+          retention-days: 90
+
+      - name: Write job summary
+        run: |
+          SHORT="$(echo '${{ github.sha }}' | cut -c1-7)"
+          {
+            echo "## GitOps image refs — \`sha-${SHORT}\`"
+            echo ""
+            echo "| Stage | Result |"
+            echo "|-------|--------|"
+            echo "| Build & Scan | ${{ needs.build-scan.result }} |"
+            echo "| Push         | ${{ needs.push.result }} |"
+            echo "| Load Test    | ${{ needs.load-test.result }} |"
+            echo "| DAST (ZAP)   | ${{ needs.dast.result }} |"
+            echo ""
+            echo "Download the \`image-refs\` artifact and feed it to the GitOps repo."
+            echo ""
+            echo '```json'
+            cat image-refs.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
