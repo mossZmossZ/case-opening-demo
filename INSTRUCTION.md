@@ -81,11 +81,11 @@ Each phase is documented in detail in a separate file to **save context and toke
 
 ---
 
-## Current State (Phase 2 — as of 2026-04-24)
+## Current State (Phase 2 complete, Phase 3 planning — as of 2026-04-24)
 
-Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is containerized and deployed via Docker Compose.
+Phase 1 is **complete**. Phase 2 is **complete and running**. Phase 3 is in **planning** — architecture reviewed, service boundaries defined, not yet implemented.
 
-### Phase 2 — What's built
+### Phase 2 — What's deployed
 - **client/Dockerfile** — Multi-stage build: React/Vite → nginx serves static assets.
 - **server/Dockerfile** — Node.js production image (`npm ci --production`).
 - **docker-compose.yml** (dev/local build) — Builds images locally; MongoDB port exposed for local dev.
@@ -94,6 +94,14 @@ Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is cont
   - `host:8080` → frontend (React SPA via nginx)
   - `host:4000` → backend API
 - **CI/CD** — GitHub Actions builds and pushes `client` + `server` images to Docker Hub on push to `main`.
+
+### Phase 3 — Architecture decisions (planning)
+- **4 microservices**: auth-service (JWT only), game-service (sessions + players), prize-service (prizes + spin authority), admin-service (BFF/orchestrator, no DB)
+- **Separate logical databases**: `zenith_auth`, `zenith_game`, `zenith_prize` — each service owns its data
+- **Redis**: cache active prizes, drop rates, live feed, stats summary
+- **prize-service is internal only** — no public routes, called by game-service and admin-service via Docker network
+- **Frontend unchanged** — nginx config updated to route to 3 backend services instead of 1
+- See `architecture.md` for full service ownership, API contracts, and data flow diagrams
 
 ### What's built
 - **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary), Leaderboard screen, and full Admin dashboard (Login, Overview, Prizes, Probability, History).
@@ -119,6 +127,21 @@ Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is cont
 - Fonts: **Lato** (all weights) — set via Tailwind config and index.css
 - Welcome page: viewport-locked (`lg:h-screen`), no scroll on 1920×1080. Layout: compact heading → image + form side-by-side → stats bar → footer.
 - All pages: white surfaces, `#E06020` orange primary, charcoal `#1A1410` footer.
+
+### Responsive / Mobile design (2026-04-24)
+All user-facing screens are designed mobile-first. Key decisions:
+- **Header padding**: `px-4 sm:px-8` on all screens (was `px-8` which was cramped on 375 px phones).
+- **WelcomeScreen mobile nav**: Desktop nav (`hidden md:flex`) has "Cases" + "Leaderboard". On mobile a compact icon-button (`md:hidden`) exposes the Leaderboard route since the desktop nav is hidden. Admin button is always visible.
+- **Stats bar (WelcomeScreen)**: Icons hidden on mobile (`hidden sm:flex`); font sizes scale down (`text-base sm:text-lg`); gap reduces (`gap-2 sm:gap-4`).
+- **Registration form**: `px-4 sm:px-7 py-4 sm:py-6` — tighter on mobile, relaxed on desktop.
+- **GameScreen top padding**: `pt-20 sm:pt-32` (was fixed `pt-32` = 128 px, far too much on mobile given a ~64 px header).
+- **GameScreen case title**: `text-2xl sm:text-4xl md:text-5xl` — scales from mobile through desktop.
+- **GameScreen player name in header**: `truncate max-w-[80px] sm:max-w-[180px]` prevents long names from overflowing the fixed header.
+- **LeaderboardScreen table**: "Time" column is `hidden sm:block` on mobile. Grid collapses from `[1fr_1fr_64px]` to `[1fr_1fr]`. Row padding reduces to `px-3 sm:px-5`.
+- **SummaryScreen best card**: `min-h-[260px] sm:min-h-[360px]` saves vertical space on mobile.
+- **Global touch behaviour** (`index.css`): `touch-action: manipulation` and `-webkit-tap-highlight-color: transparent` applied to all `button` and `a` elements — eliminates 300 ms tap delay and removes default blue highlight on iOS/Android.
+- **Reel cards** in GameScreen remain fixed at 200 px width — this is intrinsic to the spin animation math (`CARD_W`, `CARD_STEP`). The reel overflows and clips horizontally, which is intentional (slot-machine look). Do **not** change `CARD_W` without also updating the animation constants.
+- **Admin UI**: No mobile-specific changes made (admin is staff-only, desktop usage assumed). Low priority per CEO.
 
 ### Known decisions & constraints
 - `GET /api/game/stats` is a **public** endpoint — returns `participants`, `totalOpens`, `liveDrops`, `inventory`. Same data as admin dashboard but no auth required.

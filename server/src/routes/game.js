@@ -2,9 +2,18 @@ import { Router } from 'express';
 import User from '../models/User.js';
 import Session from '../models/Session.js';
 import Prize from '../models/Prize.js';
+import AppSettings from '../models/AppSettings.js';
 import { spinPrize } from '../services/gameService.js';
 
 const router = Router();
+
+async function getAppSettings() {
+  return AppSettings.findOneAndUpdate(
+    { key: 'global' },
+    { $setOnInsert: { maximumAttempts: 5 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+}
 
 // GET /api/game/prizes — public list of active prizes (for reel display)
 router.get('/prizes', async (req, res) => {
@@ -23,9 +32,11 @@ router.post('/register', async (req, res) => {
     const { name, attempts } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
 
+    const settings = await getAppSettings();
+    const maximumAttempts = settings.maximumAttempts;
     const numAttempts = Number(attempts);
-    if (!numAttempts || numAttempts < 1 || numAttempts > 10) {
-      return res.status(400).json({ error: 'Attempts must be between 1 and 10' });
+    if (!Number.isInteger(numAttempts) || numAttempts < 1 || numAttempts > maximumAttempts) {
+      return res.status(400).json({ error: `Attempts must be between 1 and ${maximumAttempts}` });
     }
 
     const user = await User.create({ name: name.trim() });
@@ -122,7 +133,10 @@ router.get('/stats', async (req, res) => {
       },
     ]);
 
-    const prizes = await Prize.find({ active: true });
+    const [prizes, settings] = await Promise.all([
+      Prize.find({ active: true }),
+      getAppSettings(),
+    ]);
 
     // Use the same queries as /api/admin/dashboard so numbers always match
     const [participants, sessions] = await Promise.all([
@@ -150,6 +164,9 @@ router.get('/stats', async (req, res) => {
       inventory: {
         remainingCases: totalRemainingCases,
         legendaryDropRate: parseFloat(legendaryDropRate)
+      },
+      settings: {
+        maximumAttempts: settings.maximumAttempts
       }
     });
   } catch (err) {

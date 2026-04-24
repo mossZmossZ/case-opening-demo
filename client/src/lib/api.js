@@ -116,6 +116,10 @@ export const adminApi = {
     request('/admin/rates', { token }),
   updateRates: (token, rates) =>
     request('/admin/rates', { token, body: rates, method: 'PUT' }),
+  getSettings: (token) =>
+    request('/admin/settings', { token }),
+  updateSettings: (token, settings) =>
+    request('/admin/settings', { token, body: settings, method: 'PUT' }),
   getHistory: (token, page = 1, limit = 20) =>
     request(`/admin/history?page=${page}&limit=${limit}`, { token }),
   resetSessions: (token) =>

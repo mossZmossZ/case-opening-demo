@@ -14,13 +14,15 @@ const NOUN = [
   'Fox', 'Cobra', 'Reaper', 'Knight', 'Demon', 'Striker',
 ];
 
+const MAX_ATTEMPT_SLOTS = 5;
+
 let _lastName = '';
 const generateRandomName = () => {
   let name;
   do {
-    const adj  = ADJ[Math.floor(Math.random() * ADJ.length)];
+    const adj = ADJ[Math.floor(Math.random() * ADJ.length)];
     const noun = NOUN[Math.floor(Math.random() * NOUN.length)];
-    const num  = Math.random() < 0.5 ? Math.floor(Math.random() * 999) + 1 : '';
+    const num = Math.random() < 0.5 ? Math.floor(Math.random() * 999) + 1 : '';
     name = `${adj}${noun}${num}`;
   } while (name === _lastName);
   _lastName = name;
@@ -34,6 +36,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ liveDrops: [], participants: 0, totalOpens: 0, inventory: { remainingCases: 0, legendaryDropRate: 0 } });
   const inputRef = useRef();
+  const maximumAttempts = stats.settings?.maximumAttempts || MAX_ATTEMPT_SLOTS;
 
   useEffect(() => { document.title = 'Zenith Comp Co. — Case Opening'; }, []);
 
@@ -41,7 +44,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
     inputRef.current?.focus();
 
     const fetchData = () => {
-      gameApi.getStats().then(setStats).catch(() => {});
+      gameApi.getStats().then(setStats).catch(() => { });
     };
 
     fetchData();
@@ -56,6 +59,10 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
       unsubscribePrizeData();
     };
   }, []);
+
+  useEffect(() => {
+    if (tries > maximumAttempts) setTries(maximumAttempts);
+  }, [tries, maximumAttempts]);
 
   const handleGo = async () => {
     if (!name.trim()) { inputRef.current?.focus(); return; }
@@ -84,7 +91,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
 
       {/* ── Header ── fixed, 64 px ── */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/95 backdrop-blur-xl border-b border-outline-variant shadow-sm">
-        <div className="max-w-7xl mx-auto h-full px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <span className="text-lg font-black tracking-tight uppercase font-headline">
               <span className="text-primary">Zenith</span> Comp Co.
@@ -101,13 +108,21 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
               </button>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <span className="hidden xl:block text-[10px] tracking-[0.18em] text-on-surface-variant uppercase">
               Nutanix Cloud Native &amp; AI Innovation Day
             </span>
+            {/* Leaderboard icon — mobile only (nav is hidden on small screens) */}
+            <button
+              onClick={onLeaderboard}
+              aria-label="Leaderboard"
+              className="md:hidden flex items-center justify-center w-9 h-9 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">leaderboard</span>
+            </button>
             <button
               onClick={onAdmin}
-              className="text-xs font-semibold tracking-wide uppercase px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
+              className="text-xs font-semibold tracking-wide uppercase px-3 sm:px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
             >
               Admin
             </button>
@@ -117,7 +132,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
 
       {/* ── Main ── */}
       <main id="main-content" className="flex-1 pt-16 lg:overflow-hidden lg:flex lg:flex-col">
-        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-8 py-4 gap-3">
+        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-8 py-4 gap-3">
 
           {/* ── Section 1: Page heading ── */}
           <div className="flex-shrink-0 text-center animate-screen-in">
@@ -164,7 +179,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
 
             {/* Right — Registration form */}
             <div className="flex flex-col bg-white border border-outline-variant shadow-md overflow-y-auto">
-              <div className="flex-1 flex flex-col justify-center px-7 py-6">
+              <div className="flex-1 flex flex-col justify-center px-4 sm:px-7 py-4 sm:py-6">
 
                 <h2 className="text-xl font-bold font-headline tracking-tight text-on-surface mb-0.5">
                   Register &amp; Play
@@ -208,20 +223,28 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
                   <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">
                     Number of Attempts
                   </label>
-                  <div className="flex gap-2" role="group" aria-label="Select number of attempts">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setTries(n)}
-                        aria-pressed={tries === n}
-                        className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+                  <div className="flex gap-2" role="group" aria-label={`Select number of attempts, maximum ${maximumAttempts}`}>
+                    {Array.from({ length: MAX_ATTEMPT_SLOTS }, (_, i) => i + 1).map(n => {
+                      const locked = n > maximumAttempts;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => !locked && setTries(n)}
+                          disabled={locked}
+                          aria-pressed={!locked && tries === n}
+                          aria-label={locked ? `Attempt ${n} locked` : `${n} attempt${n === 1 ? '' : 's'}`}
+                          className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n && !locked
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : locked
+                              ? 'border-outline-variant bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed'
+                              : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
+                            }`}
+                        >
+                          {locked ? 'x' : n}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -275,21 +298,21 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
           </div>
 
           {/* ── Section 3: Stats bar ── */}
-          <div className="flex-shrink-0 grid grid-cols-3 gap-4 animate-screen-in" style={{ animationDelay: '160ms' }}>
+          <div className="flex-shrink-0 grid grid-cols-3 gap-2 sm:gap-4 animate-screen-in" style={{ animationDelay: '160ms' }}>
             {[
               { icon: 'lock_open', value: stats.totalOpens || 0, unit: 'Opens', label: 'Total Opens' },
               { icon: 'inventory_2', value: stats.inventory.remainingCases, unit: 'Cases', label: 'Cases Remaining' },
               { icon: 'group', value: stats.participants || 0, unit: 'users', label: 'Total Participants' },
             ].map(({ icon, value, unit, label }) => (
-              <div key={label} className="bg-white border border-outline-variant shadow-sm px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary/10 flex items-center justify-center shrink-0" aria-hidden="true">
+              <div key={label} className="bg-white border border-outline-variant shadow-sm px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-3">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary/10 flex items-center justify-center shrink-0 hidden sm:flex" aria-hidden="true">
                   <span className="material-symbols-outlined text-primary text-base">{icon}</span>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-lg font-bold font-headline text-on-surface leading-none tabular-nums">
-                    {value}<span className="text-xs text-primary ml-0.5">{unit}</span>
+                  <div className="text-base sm:text-lg font-bold font-headline text-on-surface leading-none tabular-nums">
+                    {value}<span className="text-[10px] sm:text-xs text-primary ml-0.5">{unit}</span>
                   </div>
-                  <p className="text-[9px] text-on-surface-variant uppercase tracking-wider mt-0.5 truncate">{label}</p>
+                  <p className="text-[8px] sm:text-[9px] text-on-surface-variant uppercase tracking-wider mt-0.5 truncate">{label}</p>
                 </div>
               </div>
             ))}
@@ -300,17 +323,10 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
 
       {/* ── Footer ── */}
       <footer className="flex-shrink-0 bg-[#1A1410]">
-        <div className="max-w-7xl mx-auto px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav aria-label="Footer" className="flex gap-6">
-            {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-400">
-                {link}
-              </a>
-            ))}
-          </nav>
         </div>
       </footer>
 

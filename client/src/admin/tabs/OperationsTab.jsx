@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { adminApi } from '../../lib/api';
+import React, { useEffect, useState } from 'react';
+import { adminApi, notifyPrizeDataChanged } from '../../lib/api';
 
 const OPERATIONS = [
   {
@@ -151,7 +151,104 @@ function OperationCard({ op, token, onRefresh }) {
   );
 }
 
-export default function OperationsTab({ token, onRefresh }) {
+function MaximumAttemptsCard({ token, settings, onRefresh }) {
+  const [maximumAttempts, setMaximumAttempts] = useState(settings.maximumAttempts || 5);
+  const [state, setState] = useState('idle');
+  const [message, setMessage] = useState('');
+  const isDirty = maximumAttempts !== (settings.maximumAttempts || 5);
+
+  useEffect(() => {
+    setMaximumAttempts(settings.maximumAttempts || 5);
+  }, [settings.maximumAttempts]);
+
+  const save = async () => {
+    setState('loading');
+    setMessage('');
+    try {
+      const updated = await adminApi.updateSettings(token, { maximumAttempts });
+      setMaximumAttempts(updated.maximumAttempts);
+      setMessage(`Maximum attempts set to ${updated.maximumAttempts}.`);
+      setState('saved');
+      notifyPrizeDataChanged();
+      onRefresh();
+    } catch (err) {
+      setMessage(err.message || 'Failed to save maximum attempts.');
+      setState('error');
+    }
+  };
+
+  return (
+    <div className="bg-white border border-outline-variant p-6 flex flex-col gap-4">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary/8">
+          <span
+            className="material-symbols-outlined text-xl text-primary"
+            aria-hidden="true"
+            style={{ fontVariationSettings: "'FILL' 0" }}
+          >
+            counter_5
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-headline font-bold text-sm text-on-surface uppercase tracking-wide">
+            Maximum Attempts
+          </h3>
+          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+            Set how many case opens a player can choose on the home page. Locked slots show as x.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <p className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+          Attempts Limit
+        </p>
+        <div className="flex gap-2" role="group" aria-label="Select maximum attempts">
+          {[1, 2, 3, 4, 5].map(n => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setMaximumAttempts(n)}
+              aria-pressed={maximumAttempts === n}
+              className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                maximumAttempts === n
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={save}
+          disabled={!isDirty || state === 'loading'}
+          className="flex items-center gap-2 px-5 h-9 text-xs font-bold uppercase tracking-wide bg-primary text-on-primary hover:bg-primary-fixed disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+        >
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
+            {state === 'loading' ? 'progress_activity' : 'save'}
+          </span>
+          Save Limit
+        </button>
+        {message && (
+          <p
+            className={`text-xs ${state === 'error' ? 'text-red-700' : 'text-green-700'}`}
+            role={state === 'error' ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function OperationsTab({ token, settings, onRefresh }) {
   return (
     <div className="flex flex-col gap-6">
 
@@ -161,6 +258,8 @@ export default function OperationsTab({ token, onRefresh }) {
           These operations modify live data. Each action requires a confirmation step. Use with care during an active event.
         </p>
       </div>
+
+      <MaximumAttemptsCard token={token} settings={settings} onRefresh={onRefresh} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {OPERATIONS.map(op => (

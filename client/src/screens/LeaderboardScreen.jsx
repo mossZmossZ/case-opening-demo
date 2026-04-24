@@ -39,7 +39,7 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/95 backdrop-blur-xl border-b border-outline-variant shadow-sm">
-        <div className="max-w-7xl mx-auto h-full px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <span className="text-lg font-black tracking-tight uppercase font-headline">
               <span className="text-primary">Zenith</span> Comp Co.
@@ -56,13 +56,13 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
               </span>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <span className="hidden xl:block text-[10px] tracking-[0.18em] text-on-surface-variant uppercase">
               Nutanix Cloud Native &amp; AI Innovation Day
             </span>
             <button
               onClick={onAdmin}
-              className="text-xs font-semibold tracking-wide uppercase px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="text-xs font-semibold tracking-wide uppercase px-3 sm:px-4 py-2 border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               Admin
             </button>
@@ -72,7 +72,7 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
 
       {/* Main */}
       <main id="main-content" className="flex-1 pt-16 flex flex-col">
-        <div className="max-w-3xl w-full mx-auto px-8 py-8 flex flex-col gap-6">
+        <div className="max-w-3xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-6">
 
           {/* Heading */}
           <div className="text-center animate-screen-in">
@@ -117,7 +117,7 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
                     return (
                       <section key={tier} aria-label={`${meta.label} drops`}>
                         {/* Tier section header */}
-                        <div className={`flex items-center gap-3 px-5 py-2.5 border-b border-outline-variant/60 ${sectionIdx > 0 ? 'border-t border-outline-variant/40' : ''}`}
+                        <div className={`flex items-center gap-3 px-3 sm:px-5 py-2.5 border-b border-outline-variant/60 ${sectionIdx > 0 ? 'border-t border-outline-variant/40' : ''}`}
                           style={{ background: `${meta.color}12` }}
                         >
                           <div className="w-2 h-2 rounded-full shrink-0" style={{ background: meta.color }} aria-hidden="true" />
@@ -130,9 +130,9 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
                         </div>
 
                         {/* Column header */}
-                        <div className="grid grid-cols-[1fr_1fr_80px] px-5 py-2 bg-surface-container-low border-b border-outline-variant/40">
+                        <div className="grid grid-cols-[1fr_1fr] sm:grid-cols-[1fr_1fr_64px] px-3 sm:px-5 py-2 bg-surface-container-low border-b border-outline-variant/40">
                           {['Player', 'Prize', 'Time'].map((col, i) => (
-                            <span key={col} className={`text-[9px] font-bold tracking-[0.16em] uppercase text-on-surface-variant ${i === 2 ? 'text-right' : ''}`}>
+                            <span key={col} className={`text-[9px] font-bold tracking-[0.16em] uppercase text-on-surface-variant ${i === 2 ? 'text-right hidden sm:block' : ''}`}>
                               {col}
                             </span>
                           ))}
@@ -143,7 +143,7 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
                           {items.map((drop, idx) => (
                             <li
                               key={idx}
-                              className="grid grid-cols-[1fr_1fr_80px] px-5 py-3 items-center hover:bg-surface-container-low/50 transition-colors border-b border-outline-variant/20 last:border-0"
+                              className="grid grid-cols-[1fr_1fr] sm:grid-cols-[1fr_1fr_64px] px-3 sm:px-5 py-2.5 sm:py-3 items-center hover:bg-surface-container-low/50 transition-colors border-b border-outline-variant/20 last:border-0"
                             >
                               <span className="text-sm font-medium text-on-surface truncate min-w-0 pr-2" translate="no">
                                 {censorName(drop.user)}
@@ -151,7 +151,7 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
                               <span className="text-sm text-on-surface-variant truncate pr-2">
                                 {drop.prizeName}
                               </span>
-                              <span className="font-mono text-[10px] text-on-surface-variant/50 text-right tabular-nums">
+                              <span className="font-mono text-[10px] text-on-surface-variant/50 text-right tabular-nums hidden sm:block">
                                 {drop.time
                                   ? new Date(drop.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                   : '—'}
@@ -183,17 +183,10 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
 
       {/* Footer */}
       <footer className="flex-shrink-0 bg-[#1A1410]">
-        <div className="max-w-7xl mx-auto px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav aria-label="Footer" className="flex gap-6">
-            {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-400">
-                {link}
-              </a>
-            ))}
-          </nav>
         </div>
       </footer>
 
