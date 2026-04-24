@@ -9,7 +9,7 @@ export default function SummaryScreen({ session, onPlayAgain }) {
   // Index-based best to handle identical-object edge cases
   const bestIdx = results.length > 0
     ? results.reduce((bi, r, i) =>
-        TIER_ORDER.indexOf(r.tier) > TIER_ORDER.indexOf(results[bi].tier) ? i : bi
+      TIER_ORDER.indexOf(r.tier) > TIER_ORDER.indexOf(results[bi].tier) ? i : bi
       , 0)
     : -1;
   const best = bestIdx >= 0 ? results[bestIdx] : null;
@@ -237,13 +237,6 @@ export default function SummaryScreen({ session, onPlayAgain }) {
           <p className="font-body text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav className="flex gap-6">
-            {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors">
-                {link}
-              </a>
-            ))}
-          </nav>
         </div>
       </footer>
 

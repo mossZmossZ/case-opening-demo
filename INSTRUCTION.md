@@ -81,11 +81,11 @@ Each phase is documented in detail in a separate file to **save context and toke
 
 ---
 
-## Current State (Phase 2 — as of 2026-04-24)
+## Current State (Phase 2 complete, Phase 3 planning — as of 2026-04-24)
 
-Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is containerized and deployed via Docker Compose.
+Phase 1 is **complete**. Phase 2 is **complete and running**. Phase 3 is in **planning** — architecture reviewed, service boundaries defined, not yet implemented.
 
-### Phase 2 — What's built
+### Phase 2 — What's deployed
 - **client/Dockerfile** — Multi-stage build: React/Vite → nginx serves static assets.
 - **server/Dockerfile** — Node.js production image (`npm ci --production`).
 - **docker-compose.yml** (dev/local build) — Builds images locally; MongoDB port exposed for local dev.
@@ -94,6 +94,14 @@ Phase 1 is **complete**. Phase 2 is **complete and running**. Full stack is cont
   - `host:8080` → frontend (React SPA via nginx)
   - `host:4000` → backend API
 - **CI/CD** — GitHub Actions builds and pushes `client` + `server` images to Docker Hub on push to `main`.
+
+### Phase 3 — Architecture decisions (planning)
+- **4 microservices**: auth-service (JWT only), game-service (sessions + players), prize-service (prizes + spin authority), admin-service (BFF/orchestrator, no DB)
+- **Separate logical databases**: `zenith_auth`, `zenith_game`, `zenith_prize` — each service owns its data
+- **Redis**: cache active prizes, drop rates, live feed, stats summary
+- **prize-service is internal only** — no public routes, called by game-service and admin-service via Docker network
+- **Frontend unchanged** — nginx config updated to route to 3 backend services instead of 1
+- See `architecture.md` for full service ownership, API contracts, and data flow diagrams
 
 ### What's built
 - **Frontend** — React + Vite + Tailwind CSS. All 4 user screens (Welcome, Game, Result, Summary), Leaderboard screen, and full Admin dashboard (Login, Overview, Prizes, Probability, History).

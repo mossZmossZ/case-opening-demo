@@ -18,9 +18,9 @@ let _lastName = '';
 const generateRandomName = () => {
   let name;
   do {
-    const adj  = ADJ[Math.floor(Math.random() * ADJ.length)];
+    const adj = ADJ[Math.floor(Math.random() * ADJ.length)];
     const noun = NOUN[Math.floor(Math.random() * NOUN.length)];
-    const num  = Math.random() < 0.5 ? Math.floor(Math.random() * 999) + 1 : '';
+    const num = Math.random() < 0.5 ? Math.floor(Math.random() * 999) + 1 : '';
     name = `${adj}${noun}${num}`;
   } while (name === _lastName);
   _lastName = name;
@@ -41,7 +41,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
     inputRef.current?.focus();
 
     const fetchData = () => {
-      gameApi.getStats().then(setStats).catch(() => {});
+      gameApi.getStats().then(setStats).catch(() => { });
     };
 
     fetchData();
@@ -217,7 +217,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
                         className={`flex-1 h-10 font-mono text-sm font-bold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${tries === n
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline'
-                        }`}
+                          }`}
                       >
                         {n}
                       </button>
@@ -304,13 +304,6 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard }) {
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav aria-label="Footer" className="flex gap-6">
-            {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-400">
-                {link}
-              </a>
-            ))}
-          </nav>
         </div>
       </footer>
 

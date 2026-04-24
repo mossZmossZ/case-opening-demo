@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './screens/WelcomeScreen';
 import GameScreen from './screens/GameScreen';
-import ResultScreen from './screens/ResultScreen';
 import SummaryScreen from './screens/SummaryScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminLogin from './admin/AdminLogin';
@@ -12,7 +11,6 @@ export default function App() {
   const [screen, setScreen] = useState('welcome');
   const [session, setSession] = useState(null);
   const [prizes, setPrizes] = useState([]);
-  const [lastResult, setLastResult] = useState(null);
   const [adminToken, setAdminToken] = useState(null);
 
   // Fetch active prizes for the reel display (public endpoint)
@@ -31,7 +29,7 @@ export default function App() {
   useEffect(() => subscribePrizeDataChanged(loadPrizes), [loadPrizes]);
 
   useEffect(() => {
-    if (!['welcome', 'game', 'result', 'summary'].includes(screen)) return undefined;
+    if (!['welcome', 'game', 'summary'].includes(screen)) return undefined;
 
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') loadPrizes();
@@ -57,27 +55,14 @@ export default function App() {
     setScreen('game');
   }, []);
 
-  const handleResult = useCallback((result) => {
-    setLastResult(result);
-    setSession(prev => ({
-      ...prev,
-      results: [...(prev.results || []), result.prize],
-    }));
-    loadPrizes(); // refresh prize inventory after every spin
-    setScreen('result');
-  }, [loadPrizes]);
-
-  const handleContinue = useCallback(() => {
-    if (lastResult.attemptsLeft <= 0) {
-      setScreen('summary');
-    } else {
-      setScreen('game');
-    }
-  }, [lastResult]);
+  // Called by GameScreen when all spins are done (or prizes ran out mid-session)
+  const handleSummary = useCallback((updatedSession) => {
+    setSession(updatedSession);
+    setScreen('summary');
+  }, []);
 
   const handlePlayAgain = useCallback(() => {
     setSession(null);
-    setLastResult(null);
     setScreen('welcome');
   }, []);
 
@@ -111,22 +96,12 @@ export default function App() {
 
       {screen === 'game' && session && (
         <GameScreen
-          key={`game-${session.results?.length || 0}`}
+          key="game"
           session={session}
           prizes={prizes}
-          onResult={handleResult}
+          onSummary={handleSummary}
           onRefreshPrizes={loadPrizes}
           onBackHome={handlePlayAgain}
-          onGoToSummary={() => setScreen('summary')}
-        />
-      )}
-
-      {screen === 'result' && lastResult && (
-        <ResultScreen
-          key={`result-${session.results?.length || 0}`}
-          prize={lastResult.prize}
-          attemptsLeft={lastResult.attemptsLeft}
-          onContinue={handleContinue}
         />
       )}
 

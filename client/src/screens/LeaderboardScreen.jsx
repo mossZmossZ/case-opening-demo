@@ -187,13 +187,6 @@ export default function LeaderboardScreen({ onBack, onAdmin }) {
           <p className="text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
-          <nav aria-label="Footer" className="flex gap-6">
-            {['Privacy Protocol', 'Service Terms', 'Terminal Support'].map(link => (
-              <a key={link} href="#" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-400">
-                {link}
-              </a>
-            ))}
-          </nav>
         </div>
       </footer>
 
