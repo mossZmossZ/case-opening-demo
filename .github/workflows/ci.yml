@@ -366,9 +366,58 @@ jobs:
             echo "| Load Test    | ${{ needs.load-test.result }} |"
             echo "| DAST (ZAP)   | ${{ needs.dast.result }} |"
             echo ""
-            echo "Download the \`image-refs\` artifact and feed it to the GitOps repo."
-            echo ""
             echo '```json'
             cat image-refs.json
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 5 — GitOps Update
+#
+# Downloads image-refs.json from Stage 4, checks out the deployment repo,
+# runs `kustomize edit set image` for each service, then commits and pushes.
+# Argo CD / Flux picks up the commit and rolls the deployments.
+#
+# Required secrets (set in this repo → Settings → Secrets → Actions):
+#   GITOPS_REPO  — mossZmossZ/case-opening-demo-deployment
+#   GITOPS_TOKEN — Fine-grained PAT with Contents: Read & Write on that repo
+# ═══════════════════════════════════════════════════════════════════════════
+  gitops-update:
+    name: "5 · GitOps — Update Deployment Repo"
+    needs: publish-refs
+    runs-on: ubuntu-latest
+    if: needs.publish-refs.result == 'success'
+    steps:
+      - name: Download image-refs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-refs
+
+      - name: Checkout deployment repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.GITOPS_REPO }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Bump images in kustomize overlay
+        working-directory: gitops/deploy/overlays/prod
+        run: |
+          jq -r '.services[] | "\(.service)=\(.ref)"' "$GITHUB_WORKSPACE/image-refs.json" | \
+          while IFS='=' read -r name ref; do
+            kustomize edit set image "${name}=${ref}"
+          done
+
+      - name: Commit and push
+        working-directory: gitops
+        run: |
+          SHORT="$(jq -r '.commit7' "$GITHUB_WORKSPACE/image-refs.json")"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/overlays/prod/kustomization.yaml
+          git diff --cached --quiet || git commit -m "chore: bump images to sha-${SHORT}"
+          git push
