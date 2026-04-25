@@ -4,6 +4,9 @@
 > consume images from this one. A future AI tool reads this file to generate
 > the Kubernetes manifests / Kustomize overlays. Keep it up to date whenever
 > an image, port, or env var changes.
+>
+> **Last updated: 2026-04-25** — Phase 3 microservices complete, CI/CD pipeline
+> operational, Docker images scanned and published, ready for Phase 4 (Kubernetes).
 
 ---
 
@@ -28,57 +31,57 @@
 
 ## 2. Tag strategy
 
-Every push to `main` or `Development` produces **two tags per image**:
+Every push to **`main`** produces two tags per image:
 
-| Tag                  | Example              | Nature     | Use                                         |
-|----------------------|----------------------|------------|---------------------------------------------|
-| `sha-<7char>`        | `sha-8865e29`        | Immutable  | **GitOps — always pin to this**             |
-| `<branch>-latest`    | `main-latest`        | Floating   | Human sanity-check / quick dev pulls only   |
+| Tag           | Example       | Nature    | Use                                       |
+|---------------|---------------|-----------|-------------------------------------------|
+| `sha-<7char>` | `sha-8865e29` | Immutable | **GitOps — always pin to this**           |
+| `main-latest` | `main-latest` | Floating  | Human sanity-check / quick dev pulls only |
 
 **Never pin Kustomize or Argo/Flux to a floating tag.** Floating tags are
 overwritten on every merge and defeat GitOps reproducibility.
-
-The release pipeline also records the image `sha256` digest and a
-`pinned` ref of the form `repo@sha256:...` in the artifact below, which is
-even stronger than a SHA tag (tag re-push cannot swap it).
 
 ---
 
 ## 3. GitOps handoff artifact — `image-refs.json`
 
-At the end of every successful release run, the workflow uploads an artifact
-named **`image-refs`** (see `.github/workflows/release.yml`). Download it
-from the run and feed it to the GitOps repo's workflow.
+At the end of every successful Stage 4 run, the workflow uploads an artifact
+named **`image-refs`** (see `.github/workflows/ci.yml` → `publish-refs` job).
+Download it from the run and feed it to the GitOps repo's workflow.
 
 Shape:
 
 ```json
 {
-  "commit":   "8865e29abc...full sha...",
-  "commit7":  "8865e29",
-  "branch":   "main",
-  "repo":     "<org>/case-opening-demo",
-  "runUrl":   "https://github.com/.../actions/runs/123456",
+  "commit":  "8865e29abc...full sha...",
+  "commit7": "8865e29",
+  "branch":  "main",
+  "repo":    "<org>/case-opening-demo",
+  "runUrl":  "https://github.com/.../actions/runs/123456",
+  "qualityGates": {
+    "loadTest": true,
+    "dast":     true
+  },
   "services": [
     {
-      "service":  "client",
-      "image":    "docker.io/<user>/case-opening-demo-client",
-      "tag":      "sha-8865e29",
-      "ref":      "docker.io/<user>/case-opening-demo-client:sha-8865e29",
-      "digest":   "sha256:...",
-      "pinned":   "docker.io/<user>/case-opening-demo-client@sha256:..."
+      "service": "client",
+      "image":   "docker.io/<user>/case-opening-demo-client",
+      "tag":     "sha-8865e29",
+      "ref":     "docker.io/<user>/case-opening-demo-client:sha-8865e29"
     }
-    // ... one entry per service
+    // ... one entry per service (5 total)
   ]
 }
 ```
 
 **Recommended GitOps repo flow** (next AI tool builds this):
-1. Download `image-refs` artifact via `actions/download-artifact` with
-   `github-token` + `run-id` from a `repository_dispatch` event.
-2. For each service, run `kustomize edit set image <name>=<ref>` (prefer
-   `pinned` → digest; fall back to `ref` → SHA tag).
-3. Commit & push the overlay change; ArgoCD / Flux syncs it to the cluster.
+1. Listen for a `repository_dispatch` event from this repo's pipeline.
+2. Download the `image-refs` artifact using `actions/download-artifact`.
+3. For each entry in `services[]`, run:
+   ```
+   kustomize edit set image <service-name>=<ref>
+   ```
+4. Commit & push the overlay change; ArgoCD / Flux syncs to the cluster.
 
 ---
 
@@ -265,3 +268,65 @@ GitOps / Kustomize updates are **not** done here — that's the next repo's
 job. Download the `image-refs` artifact from the run and feed it to the
 GitOps repo workflow. This repo's contract ends at "images pushed to Docker
 Hub + `image-refs.json` artifact available".
+
+---
+
+## 9. Docker image security hardening
+
+All four microservice runner stages (`auth`, `game`, `admin`, `prize`) include:
+
+```dockerfile
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx
+```
+
+**Why:** `node:20-alpine` ships with npm@10.8.2, which bundles its own copies
+of `tar@6.2.1`, `cross-spawn@7.0.3`, `glob@10.4.2`, and `minimatch@9.0.5` —
+all with known HIGH CVEs. These packages belong to npm's own internals; our
+application code never uses them. Removing npm from the runner stage:
+
+1. Clears all 11 Trivy HIGH findings so the CI gate passes clean.
+2. Reduces the production container attack surface (no package manager present).
+
+The `client` image (`FROM nginx:alpine`) is unaffected — nginx has no npm.
+
+All five services also have a `package-lock.json` (committed) and their
+Dockerfiles use `npm ci` (instead of `npm install`) to guarantee
+reproducible, deterministic builds regardless of when the CI runner executes.
+
+---
+
+## 10. Current state — 2026-04-25
+
+### What is complete
+
+| Area | Status |
+|------|--------|
+| Phase 3 microservices | **Complete** — auth, game, admin, prize services running; client nginx proxy configured |
+| Docker images | **Published** — all 5 images on Docker Hub, SHA-tagged |
+| CI/CD pipeline | **Operational** — `.github/workflows/ci.yml`, push-to-main trigger |
+| Trivy CVE gate | **Passing** — 0 HIGH/CRITICAL after npm removal from runner stages |
+| Lock files | **Committed** — all 5 services have `package-lock.json` for reproducible builds |
+| Kubernetes setup | **In progress** — cluster provisioned, GitOps repo not yet created |
+
+### What is next (Phase 4)
+
+1. **Create the GitOps repo** — Kubernetes manifests + Kustomize overlays.
+   Use this `deployment.md` (§§1–7) as the input spec. The AI tool building
+   the GitOps repo needs:
+   - The 5 image names from §1
+   - The tag format `sha-<7char>` from §2
+   - The `image-refs.json` shape from §3
+   - The env vars, ports, and secrets from §4 and §6
+   - The ingress surface from §5
+   - The health check guidance from §7
+
+2. **Add a GitOps trigger step to `ci.yml`** — after Stage 4 (`publish-refs`),
+   fire a `repository_dispatch` to the GitOps repo so it pulls `image-refs.json`
+   and runs `kustomize edit set image` automatically.
+
+3. **Add `/healthz` endpoints** to all four Node services (§7) so K8s readiness
+   and liveness probes work properly without relying on TCP-only checks.
+
+4. **Istio + observability** (Phase 4 roadmap) — service mesh, Kiali, Jaeger.
