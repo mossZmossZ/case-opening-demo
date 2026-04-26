@@ -227,7 +227,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
       setTimeout(() => {
         cancelAnimationFrame(tickRafRef.current);
 
-        // Particle burst on win
+        // Particle burst fires first — give it one clean frame before React re-renders
         const reelEl = document.querySelector('.reel-wrap');
         if (reelEl) {
           const r = reelEl.getBoundingClientRect();
@@ -235,17 +235,19 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
           burst(r.left + r.width / 2, r.top + r.height / 2, TIER_META[winPrize.tier].color, count);
         }
 
-        const newResults = [...localResults, winPrize];
-        setLocalResults(newResults);
-        setLastPrize(winPrize);
-        onRefreshPrizes();
+        // Defer state update to next frame so the burst canvas gets a clean first paint
+        requestAnimationFrame(() => {
+          const newResults = [...localResults, winPrize];
+          setLocalResults(newResults);
+          setLastPrize(winPrize);
+          onRefreshPrizes();
 
-        // All attempts done → redirect to summary after a short delay
-        if (session.totalAttempts - newResults.length <= 0) {
-          setPhase('done');
-        } else {
-          setPhase('revealed');
-        }
+          if (session.totalAttempts - newResults.length <= 0) {
+            setPhase('done');
+          } else {
+            setPhase('revealed');
+          }
+        });
       }, duration + 200);
 
     } catch (err) {
@@ -291,9 +293,9 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
       </header>
 
       <main className="pt-20 sm:pt-32 pb-16 sm:pb-24 px-4 md:px-12 flex-grow flex flex-col items-center justify-center relative overflow-hidden animate-screen-in">
-        {/* Ambient glow */}
+        {/* Ambient glow — smaller blur on mobile to avoid GPU overdraw during particle animation */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/6 blur-[140px] rounded-full -z-10"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] md:w-[800px] md:h-[400px] bg-primary/6 blur-[60px] md:blur-[140px] rounded-full -z-10 will-change-transform"
           aria-hidden="true"
         />
 

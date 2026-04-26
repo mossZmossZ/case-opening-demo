@@ -196,7 +196,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
 
               {/* Corner tags */}
               <div className="absolute top-4 left-4 z-10 text-[10px] font-bold text-primary bg-white/90 px-2 py-1 tracking-wider border border-primary/30">
-                MODEL: ZNTH-001
+                MODEL: ZNC-001
               </div>
               <div className="absolute top-4 right-4 z-10 text-[10px] font-bold text-white bg-primary px-2 py-1 tracking-wider">
                 RARITY: LEGENDARY
