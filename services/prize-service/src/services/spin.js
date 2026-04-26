@@ -5,7 +5,7 @@ import redis from '../lib/redis.js';
  * Server-side weighted random prize selection.
  * Only considers active prizes with remaining stock > 0.
  * Atomically decrements stock to prevent overselling.
- * Invalidates Redis cache when stock hits 0.
+ * Invalidates Redis cache after every spin to keep homepage counts current.
  */
 export async function spinPrize() {
   const prizes = await Prize.find({ active: true, remainingStock: { $gt: 0 } });
@@ -36,10 +36,8 @@ export async function spinPrize() {
     return spinPrize();
   }
 
-  // If stock hit 0, invalidate active prizes cache
-  if (updated.remainingStock === 0) {
-    await redis.del('prizes:active');
-  }
+  // Invalidate active prizes cache so remainingCases on the homepage stays current
+  await redis.del('prizes:active');
 
   return {
     prizeId: updated._id,

@@ -8,7 +8,7 @@ const CARD_W = 200;
 const CARD_GAP = 16;
 const CARD_STEP = CARD_W + CARD_GAP; // 216 px per slot
 const SPIN_DURATION = 5500;          // ms — CS:GO slow-reveal
-const AUTO_REDIRECT_DELAY = 3000;
+const AUTO_REDIRECT_DELAY = 2000;
 
 // Short white-noise burst → mechanical click
 function playTick(audioCtx) {
@@ -524,6 +524,11 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
               {spinError}
             </p>
           )}
+
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-on-surface-variant/60 select-none">
+            <span className="material-symbols-outlined text-[13px] text-amber-500" aria-hidden="true">warning</span>
+            Please don't refresh or close this page
+          </p>
         </div>
       </main>
 
