@@ -238,7 +238,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
                       onChange={e => setName(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleGo()}
                       maxLength={40}
-                      className="min-w-0 flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
+                      className="min-w-0 flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-base md:text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
                     />
                     <button
                       onClick={randomize}
