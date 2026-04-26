@@ -100,7 +100,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
   };
 
   return (
-    <div className="flex flex-col lg:h-screen lg:overflow-hidden bg-background text-on-surface font-body">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background text-on-surface font-body">
 
       {/* ── Skip link ── */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-on-primary focus:text-sm focus:font-semibold">
@@ -149,8 +149,8 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
       </header>
 
       {/* ── Main ── */}
-      <main id="main-content" className="flex-1 pt-16 lg:overflow-hidden lg:flex lg:flex-col">
-        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-8 py-4 gap-3">
+      <main id="main-content" className="flex flex-1 flex-col pt-16">
+        <div className="flex flex-1 flex-col gap-3 max-w-7xl w-full mx-auto px-4 sm:px-8 py-4 lg:py-3">
 
           {/* ── Section 1: Page heading ── */}
           <div className="flex-shrink-0 text-center animate-screen-in">
@@ -163,7 +163,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
           </div>
 
           {/* ── Section 2: Two-column grid ── */}
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[11fr_9fr] gap-5 animate-screen-in" style={{ animationDelay: '80ms' }}>
+          <div className="grid flex-1 grid-cols-1 gap-5 lg:min-h-0 lg:grid-cols-[11fr_9fr] animate-screen-in" style={{ animationDelay: '80ms' }}>
 
             {/* Left — Case image */}
             <div className="hidden lg:block relative overflow-hidden border border-outline-variant shadow-md">
@@ -210,7 +210,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
             </div>
 
             {/* Right — Registration form */}
-            <div className="flex flex-col bg-white border border-outline-variant shadow-md overflow-y-auto">
+            <div className="flex flex-col bg-white border border-outline-variant shadow-md lg:overflow-y-auto">
               <div className="flex-1 flex flex-col justify-center px-4 sm:px-7 py-4 sm:py-6">
 
                 <h2 className="text-xl font-bold font-headline tracking-tight text-on-surface mb-0.5">
@@ -238,7 +238,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
                       onChange={e => setName(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleGo()}
                       maxLength={40}
-                      className="flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
+                      className="min-w-0 flex-1 h-10 px-4 bg-surface-container-low border border-outline-variant text-on-surface text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
                     />
                     <button
                       onClick={randomize}
@@ -317,7 +317,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
                       {stats.liveDrops.slice(0, 5).map((drop, idx) => (
                         <li key={idx} className="flex items-center justify-between text-xs py-1 border-b border-outline-variant/30 last:border-0 gap-2">
                           <span className="font-semibold text-on-surface truncate min-w-0" translate="no">{censorName(drop.user)}</span>
-                          <span className={`font-medium shrink-0 ${drop.tier === 'legendary' ? 'text-primary' : drop.tier === 'epic' ? 'text-purple-600' : 'text-on-surface-variant'}`}>
+                          <span className={`min-w-0 max-w-[58%] truncate text-right font-medium ${drop.tier === 'legendary' ? 'text-primary' : drop.tier === 'epic' ? 'text-purple-600' : 'text-on-surface-variant'}`}>
                             {drop.name}
                           </span>
                         </li>
@@ -356,7 +356,7 @@ export default function WelcomeScreen({ onStart, onAdmin, onLeaderboard, prizes 
       {/* ── Footer ── */}
       <footer className="flex-shrink-0 bg-[#1A1410]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <p className="text-[10px] uppercase tracking-widest text-neutral-500">
+          <p className="text-center sm:text-left text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
         </div>
