@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import Prize from '../models/Prize.js';
 import redis from '../lib/redis.js';
-import { spinPrize } from '../services/spin.js';
+import { spinPrize, spinPrizePreview } from '../services/spin.js';
+import { logger } from '../lib/logger.js';
 
 const router = Router();
 
@@ -86,6 +87,18 @@ router.post('/spin', async (req, res) => {
     const prize = await spinPrize();
     res.json(prize);
   } catch (err) {
+    logger.error('spin.failed', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /internal/prizes/spin-preview — weighted random, NO stock decrement (demo/test only)
+router.post('/spin-preview', async (req, res) => {
+  try {
+    const prize = await spinPrizePreview();
+    res.json(prize);
+  } catch (err) {
+    logger.error('spin.preview.failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });

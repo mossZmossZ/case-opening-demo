@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import AdminUser from './models/AdminUser.js';
+import { logger, requestLogger } from './lib/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -11,6 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
 
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -61,21 +63,18 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/zenith_aut
 
 mongoose.connect(MONGO_URI)
   .then(async () => {
-    console.log('auth-service: Connected to MongoDB');
+    logger.info('startup', { msg: 'Connected to MongoDB' });
 
-    // Auto-seed admin user if none exists
     const adminCount = await AdminUser.countDocuments();
     if (adminCount === 0) {
       const hash = await bcrypt.hash('zenith', 10);
       await AdminUser.create({ username: 'admin', passwordHash: hash });
-      console.log('auth-service: Seeded default admin user (admin / zenith)');
+      logger.info('startup', { msg: 'Seeded default admin user (admin / zenith)' });
     }
 
-    app.listen(PORT, () => {
-      console.log(`auth-service running on port ${PORT}`);
-    });
+    app.listen(PORT, () => logger.info('startup', { msg: 'auth-service ready', port: PORT }));
   })
   .catch(err => {
-    console.error('auth-service: Failed to connect to MongoDB:', err.message);
+    logger.error('startup', { msg: 'Failed to connect to MongoDB', error: err.message });
     process.exit(1);
   });

@@ -37,3 +37,16 @@ export async function spin(traceHeaders = {}) {
   }
   return res.json();
 }
+
+// Preview spin — no stock decrement, used for demo/test accounts.
+export async function spinPreview(traceHeaders = {}) {
+  const res = await fetch(`${PRIZE_SERVICE_URL}/internal/prizes/spin-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...pickTraceHeaders(traceHeaders) },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Spin preview failed');
+  }
+  return res.json();
+}
