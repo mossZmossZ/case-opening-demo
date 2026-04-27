@@ -3,12 +3,14 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import gameRoutes from './routes/game.js';
 import internalRoutes from './routes/internal.js';
+import { logger, requestLogger } from './lib/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 4002;
 
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -27,12 +29,10 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/zenith_gam
 
 mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('game-service: Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`game-service running on port ${PORT}`);
-    });
+    logger.info('startup', { msg: 'Connected to MongoDB' });
+    app.listen(PORT, () => logger.info('startup', { msg: 'game-service ready', port: PORT }));
   })
   .catch(err => {
-    console.error('game-service: Failed to connect to MongoDB:', err.message);
+    logger.error('startup', { msg: 'Failed to connect to MongoDB', error: err.message });
     process.exit(1);
   });

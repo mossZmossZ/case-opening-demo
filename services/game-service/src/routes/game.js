@@ -4,6 +4,18 @@ import Session from '../models/Session.js';
 import AppSettings from '../models/AppSettings.js';
 import redis from '../lib/redis.js';
 import * as prizeClient from '../lib/prizeClient.js';
+import { logger } from '../lib/logger.js';
+
+// Accounts matching this pattern are demo/test users:
+// - full spin flow runs (including Jaeger tracing)
+// - stock is NOT decremented
+// - results are NOT pushed to live feed or stats
+// - sessions are excluded from leaderboard, history, and public stats
+const DEMO_PATTERN = /^demo$/i;
+const isDemo = (name) => DEMO_PATTERN.test((name || '').trim());
+// MongoDB filters to exclude demo accounts from public/admin queries
+const NOT_DEMO         = { $expr: { $ne: [{ $toLower: '$playerName' }, 'demo'] } }; // for Session
+const NOT_DEMO_USER    = { $expr: { $ne: [{ $toLower: '$name' },       'demo'] } }; // for User
 
 const router = Router();
 
@@ -45,12 +57,20 @@ router.post('/register', async (req, res) => {
       totalAttempts: numAttempts,
     });
 
+    logger.info('register', {
+      sessionId: String(session._id),
+      playerName: session.playerName,
+      attempts: session.totalAttempts,
+      demo: isDemo(session.playerName),
+    });
+
     res.json({
       sessionId: session._id,
       playerName: session.playerName,
       totalAttempts: session.totalAttempts,
     });
   } catch (err) {
+    logger.error('register.failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -69,13 +89,16 @@ router.post('/spin/:sessionId', async (req, res) => {
       return res.status(400).json({ error: 'No attempts remaining' });
     }
 
-    // Call prize-service for weighted random spin — forward B3 headers so Istio
-    // can link this outbound call as a child span of the incoming trace.
-    const prize = await prizeClient.spin(req.headers);
+    const demo = isDemo(session.playerName);
+
+    // Demo accounts use preview spin — same weighted random, no stock decrement.
+    const prize = demo
+      ? await prizeClient.spinPreview(req.headers)
+      : await prizeClient.spin(req.headers);
 
     session.results.push({
       attempt: attemptsUsed + 1,
-      prizeId: prize.prizeId,
+      prizeId: demo ? null : prize.prizeId,
       prizeName: prize.name,
       tier: prize.tier,
       iconKey: prize.iconKey,
@@ -87,22 +110,33 @@ router.post('/spin/:sessionId', async (req, res) => {
     if (attemptsLeft <= 0) session.status = 'completed';
     await session.save();
 
-    // Push to Redis live feed
-    try {
-      await redis.lpush('feed:recent', JSON.stringify({
-        user: session.playerName,
-        name: prize.name,
-        tier: prize.tier,
-        time: new Date().toISOString(),
-      }));
-      await redis.ltrim('feed:recent', 0, 49);
-    } catch { /* Redis failure is non-fatal */ }
+    if (!demo) {
+      // Push to Redis live feed (real users only)
+      try {
+        await redis.lpush('feed:recent', JSON.stringify({
+          user: session.playerName,
+          name: prize.name,
+          tier: prize.tier,
+          time: new Date().toISOString(),
+        }));
+        await redis.ltrim('feed:recent', 0, 49);
+      } catch { /* Redis failure is non-fatal */ }
 
-    // Invalidate stats cache
-    try { await redis.del('stats:summary'); } catch {}
+      // Invalidate stats cache
+      try { await redis.del('stats:summary'); } catch {}
+    }
 
-    // Echo the Istio-injected trace ID so the client can surface it on the summary screen.
     const traceId = req.headers['x-b3-traceid'] ?? null;
+
+    logger.info('spin', {
+      sessionId: String(session._id),
+      playerName: session.playerName,
+      attempt: attemptsUsed + 1,
+      prize: prize.name,
+      tier: prize.tier,
+      demo,
+      traceId,
+    });
 
     res.json({
       prize,
@@ -112,6 +146,7 @@ router.post('/spin/:sessionId', async (req, res) => {
       traceId,
     });
   } catch (err) {
+    logger.error('spin.failed', { sessionId: req.params.sessionId, error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -142,7 +177,7 @@ router.get('/stats', async (req, res) => {
     const cached = await redis.get('stats:summary').catch(() => null);
     if (cached) return res.json(JSON.parse(cached));
 
-    // Live drops: try Redis feed, fall back to DB
+    // Live drops: try Redis feed (already demo-filtered at write time), fall back to DB
     let liveDrops;
     try {
       const feedData = await redis.lrange('feed:recent', 0, 9);
@@ -153,6 +188,7 @@ router.get('/stats', async (req, res) => {
 
     if (!liveDrops) {
       liveDrops = await Session.aggregate([
+        { $match: NOT_DEMO },
         { $unwind: '$results' },
         { $sort: { 'results.timestamp': -1 } },
         { $limit: 10 },
@@ -169,8 +205,8 @@ router.get('/stats', async (req, res) => {
 
     const [settings, participants, sessions] = await Promise.all([
       getAppSettings(),
-      User.countDocuments(),
-      Session.find({}, { results: 1 }).lean(),
+      User.countDocuments(NOT_DEMO_USER),
+      Session.find(NOT_DEMO, { results: 1 }).lean(),
     ]);
     const totalOpens = sessions.reduce((sum, s) => sum + (s.results?.length ?? 0), 0);
 
@@ -211,6 +247,7 @@ router.get('/stats', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
   try {
     const drops = await Session.aggregate([
+      { $match: NOT_DEMO },
       { $unwind: '$results' },
       {
         $addFields: {

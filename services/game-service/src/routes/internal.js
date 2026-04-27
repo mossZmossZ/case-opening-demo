@@ -3,6 +3,10 @@ import User from '../models/User.js';
 import Session from '../models/Session.js';
 import AppSettings from '../models/AppSettings.js';
 import redis from '../lib/redis.js';
+import { logger } from '../lib/logger.js';
+
+const NOT_DEMO      = { $expr: { $ne: [{ $toLower: '$playerName' }, 'demo'] } };
+const NOT_DEMO_USER = { $expr: { $ne: [{ $toLower: '$name' },       'demo'] } };
 
 const router = Router();
 
@@ -18,17 +22,19 @@ async function getAppSettings() {
 router.get('/dashboard', async (req, res) => {
   try {
     const [totalUsers, totalSessions, activeSessions] = await Promise.all([
-      User.countDocuments(),
-      Session.countDocuments(),
-      Session.countDocuments({ status: 'active' }),
+      User.countDocuments(NOT_DEMO_USER),
+      Session.countDocuments(NOT_DEMO),
+      Session.countDocuments({ status: 'active', ...NOT_DEMO }),
     ]);
 
     const totalOpens = await Session.aggregate([
+      { $match: NOT_DEMO },
       { $project: { count: { $size: { $ifNull: ['$results', []] } } } },
       { $group: { _id: null, total: { $sum: '$count' } } },
     ]);
 
     const recentActivity = await Session.aggregate([
+      { $match: NOT_DEMO },
       { $unwind: '$results' },
       { $sort: { 'results.timestamp': -1 } },
       { $limit: 10 },
@@ -61,6 +67,7 @@ router.get('/history', async (req, res) => {
     const skip = (page - 1) * limit;
 
     const pipeline = [
+      { $match: NOT_DEMO },
       { $unwind: '$results' },
       { $sort: { 'results.timestamp': -1 } },
       {
