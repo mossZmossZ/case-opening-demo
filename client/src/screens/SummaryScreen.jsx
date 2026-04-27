@@ -1,9 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TIER_META, TIER_ORDER } from '../lib/constants';
 import PrizeIcon from '../components/PrizeIcon';
 
 export default function SummaryScreen({ session, onPlayAgain }) {
+  const [traceCopied, setTraceCopied] = useState(false);
+
   useEffect(() => { document.title = 'Your Results — Zenith Comp Co.'; }, []);
+
+  function handleCopyTrace() {
+    navigator.clipboard.writeText(session.traceId).catch(() => {});
+    setTraceCopied(true);
+    setTimeout(() => setTraceCopied(false), 2000);
+  }
   const results = session.results || [];
 
   // Index-based best to handle identical-object edge cases
@@ -252,6 +260,30 @@ export default function SummaryScreen({ session, onPlayAgain }) {
           <p className="font-body text-[10px] uppercase tracking-widest text-neutral-500">
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
+
+          {session.traceId && (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="hidden sm:block font-mono text-[9px] uppercase tracking-[0.2em] text-neutral-600 flex-shrink-0">
+                Trace ID
+              </span>
+              <span
+                translate="no"
+                title={session.traceId}
+                className="font-mono text-[9px] text-neutral-500 tracking-wide truncate max-w-[120px] sm:max-w-[240px]"
+              >
+                {session.traceId}
+              </span>
+              <button
+                onClick={handleCopyTrace}
+                aria-label={traceCopied ? 'Copied!' : 'Copy trace ID to clipboard'}
+                className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-neutral-600 hover:text-neutral-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+              >
+                <span className="material-symbols-outlined text-[13px]" aria-hidden="true">
+                  {traceCopied ? 'check' : 'content_copy'}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </footer>
 
