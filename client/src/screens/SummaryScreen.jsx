@@ -239,7 +239,37 @@ export default function SummaryScreen({ session, onPlayAgain }) {
             </div>
 
             {/* CTA */}
-            <div className="flex-shrink-0 pt-3 border-t border-outline-variant">
+            <div className="flex-shrink-0 pt-3 border-t border-outline-variant flex flex-col gap-2">
+
+              {/* Jaeger trace ID — always visible; shows "none" when Istio is absent */}
+              <div className="flex items-center gap-2 px-1 min-w-0">
+                <span className="flex-shrink-0 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  Jaeger ID:
+                </span>
+                {session.traceId ? (
+                  <>
+                    <span
+                      translate="no"
+                      title={session.traceId}
+                      className="font-mono text-[10px] text-primary truncate min-w-0"
+                    >
+                      {session.traceId}
+                    </span>
+                    <button
+                      onClick={handleCopyTrace}
+                      aria-label={traceCopied ? 'Copied!' : 'Copy Jaeger trace ID'}
+                      className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-on-surface-variant hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                    >
+                      <span className="material-symbols-outlined text-[13px]" aria-hidden="true">
+                        {traceCopied ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  </>
+                ) : (
+                  <span className="font-mono text-[10px] text-on-surface-variant/40">none</span>
+                )}
+              </div>
+
               <button
                 onClick={onPlayAgain}
                 className="w-full h-12 bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary-fixed active:scale-[0.98] transition-[background-color,box-shadow,transform] shadow-[0_2px_12px_rgba(224,96,32,0.25)] hover:shadow-[0_4px_20px_rgba(224,96,32,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -261,29 +291,6 @@ export default function SummaryScreen({ session, onPlayAgain }) {
             © 2026 Zenith Comp Co., Ltd. — Nutanix Cloud Native &amp; AI Innovation Day
           </p>
 
-          {session.traceId && (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="hidden sm:block font-mono text-[9px] uppercase tracking-[0.2em] text-neutral-600 flex-shrink-0">
-                Trace ID
-              </span>
-              <span
-                translate="no"
-                title={session.traceId}
-                className="font-mono text-[9px] text-neutral-500 tracking-wide truncate max-w-[120px] sm:max-w-[240px]"
-              >
-                {session.traceId}
-              </span>
-              <button
-                onClick={handleCopyTrace}
-                aria-label={traceCopied ? 'Copied!' : 'Copy trace ID to clipboard'}
-                className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-neutral-600 hover:text-neutral-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-              >
-                <span className="material-symbols-outlined text-[13px]" aria-hidden="true">
-                  {traceCopied ? 'check' : 'content_copy'}
-                </span>
-              </button>
-            </div>
-          )}
         </div>
       </footer>
 
