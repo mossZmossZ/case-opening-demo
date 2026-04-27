@@ -7,11 +7,11 @@ import HistoryTab from './tabs/HistoryTab';
 import OperationsTab from './tabs/OperationsTab';
 
 const NAV = [
-  { id: 'overview',    label: 'Overview',    icon: 'dashboard'      },
-  { id: 'prizes',      label: 'Prizes',      icon: 'inventory_2'    },
-  { id: 'probability', label: 'Drop Rates',  icon: 'tune'           },
-  { id: 'history',     label: 'History',     icon: 'history'        },
-  { id: 'operations',  label: 'Operations',  icon: 'admin_panel_settings' },
+  { id: 'overview', label: 'Overview', icon: 'dashboard' },
+  { id: 'prizes', label: 'Prizes', icon: 'inventory_2' },
+  { id: 'probability', label: 'Drop Rates', icon: 'tune' },
+  { id: 'history', label: 'History', icon: 'history' },
+  { id: 'operations', label: 'Operations', icon: 'admin_panel_settings' },
 ];
 
 export default function AdminDashboard({ token, onLogout }) {
@@ -53,7 +53,7 @@ export default function AdminDashboard({ token, onLogout }) {
             <span className="text-primary">Zenith</span>&nbsp;Admin
           </span>
           <span className="hidden md:block text-[10px] text-on-surface-variant/50 tracking-widest uppercase ml-3 pl-3 border-l border-outline-variant">
-            Nutanix Cloud Native &amp; AI Innovation Day
+            Nutanix Cloud Native &amp; AI Innovation Day DEMO
           </span>
         </div>
 
@@ -79,11 +79,10 @@ export default function AdminDashboard({ token, onLogout }) {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-all text-left w-full border-r-2 ${
-                tab === id
+              className={`flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-all text-left w-full border-r-2 ${tab === id
                   ? 'bg-primary/8 text-primary border-primary font-semibold'
                   : 'text-on-surface-variant border-transparent hover:bg-surface-container hover:text-on-surface'
-              }`}
+                }`}
             >
               <span
                 className="material-symbols-outlined text-[18px]"
@@ -126,11 +125,11 @@ export default function AdminDashboard({ token, onLogout }) {
                 </p>
               </div>
 
-              {tab === 'overview'    && <OverviewTab dashboard={dashboard} />}
-              {tab === 'prizes'      && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
+              {tab === 'overview' && <OverviewTab dashboard={dashboard} />}
+              {tab === 'prizes' && <PrizesTab token={token} prizes={prizes} onRefresh={refresh} />}
               {tab === 'probability' && <ProbabilityTab token={token} prizes={prizes} onRefresh={refresh} />}
-              {tab === 'history'     && <HistoryTab token={token} />}
-              {tab === 'operations'  && <OperationsTab token={token} settings={settings} onRefresh={refresh} />}
+              {tab === 'history' && <HistoryTab token={token} />}
+              {tab === 'operations' && <OperationsTab token={token} settings={settings} onRefresh={refresh} />}
             </div>
           )}
         </main>
