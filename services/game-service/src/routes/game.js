@@ -69,8 +69,9 @@ router.post('/spin/:sessionId', async (req, res) => {
       return res.status(400).json({ error: 'No attempts remaining' });
     }
 
-    // Call prize-service for weighted random spin
-    const prize = await prizeClient.spin();
+    // Call prize-service for weighted random spin — forward B3 headers so Istio
+    // can link this outbound call as a child span of the incoming trace.
+    const prize = await prizeClient.spin(req.headers);
 
     session.results.push({
       attempt: attemptsUsed + 1,
@@ -100,11 +101,15 @@ router.post('/spin/:sessionId', async (req, res) => {
     // Invalidate stats cache
     try { await redis.del('stats:summary'); } catch {}
 
+    // Echo the Istio-injected trace ID so the client can surface it on the summary screen.
+    const traceId = req.headers['x-b3-traceid'] ?? null;
+
     res.json({
       prize,
       attemptsLeft,
       attempt: attemptsUsed + 1,
       totalAttempts: session.totalAttempts,
+      traceId,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

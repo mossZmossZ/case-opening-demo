@@ -121,6 +121,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
   const audioCtxRef = useRef(null);
   const tickRafRef = useRef(null);
   const initialReelSet = useRef(false);
+  const lastTraceIdRef = useRef(null);
 
   // Set initial reel once when prizes first arrive — never reset between spins
   useEffect(() => {
@@ -148,7 +149,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
     }, 1000);
 
     const timeoutId = setTimeout(() => {
-      onSummary({ ...session, results: localResults });
+      onSummary({ ...session, results: localResults, traceId: lastTraceIdRef.current });
     }, AUTO_REDIRECT_DELAY);
 
     return () => {
@@ -179,6 +180,7 @@ export default function GameScreen({ session, prizes, onSummary, onRefreshPrizes
     try {
       const result = await gameApi.spin(session.sessionId);
       const winPrize = result.prize;
+      if (result.traceId) lastTraceIdRef.current = result.traceId;
 
       const { items, winIdx } = buildReel(prizes, winPrize);
       setReelItems(items);
