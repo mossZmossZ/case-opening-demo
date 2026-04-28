@@ -53,7 +53,7 @@ export default function AdminDashboard({ token, onLogout }) {
             <span className="text-primary">Zenith</span>&nbsp;Admin
           </span>
           <span className="hidden md:block text-[10px] text-on-surface-variant/50 tracking-widest uppercase ml-3 pl-3 border-l border-outline-variant">
-            Nutanix Cloud Native &amp; AI Innovation Day DEMO
+            Nutanix Cloud Native &amp; AI Innovation Day
           </span>
         </div>
 
@@ -80,8 +80,8 @@ export default function AdminDashboard({ token, onLogout }) {
               key={id}
               onClick={() => setTab(id)}
               className={`flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-all text-left w-full border-r-2 ${tab === id
-                  ? 'bg-primary/8 text-primary border-primary font-semibold'
-                  : 'text-on-surface-variant border-transparent hover:bg-surface-container hover:text-on-surface'
+                ? 'bg-primary/8 text-primary border-primary font-semibold'
+                : 'text-on-surface-variant border-transparent hover:bg-surface-container hover:text-on-surface'
                 }`}
             >
               <span
